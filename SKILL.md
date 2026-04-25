@@ -8,7 +8,7 @@ Security: Open-source, no network access, no data collection. See SAFETY.md for 
 version: 1.0.6
 author: CertainLogic
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]  # Windows: no advisory locking (fcntl), but code runs with graceful degradation
 ---
 
 # AgentPathfinder

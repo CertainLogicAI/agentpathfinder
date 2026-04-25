@@ -13,5 +13,8 @@
     "data_dir": "./pathfinder_data"
   },
   "safety": "SAFETY.md",
-  "repository": "https://github.com/CertainLogicAI/agentpathfinder"
+  "repository": "https://github.com/CertainLogicAI/agentpathfinder",
+  "scripts": {
+    "postinstall": "echo 'Install complete. Run: pf install'"
+  }
 }

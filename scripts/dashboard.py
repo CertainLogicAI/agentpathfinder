@@ -30,7 +30,11 @@ except ImportError:
         sys.exit(1)
 
 DATA_DIR = Path("./pathfinder_data")
-BRAIN_METRICS = Path("/data/.openclaw/workspace/agentpathfinder/metrics.json")
+# Optional: set BRAIN_METRICS env var to show Brain API stats tab
+# Example: BRAIN_METRICS=/path/to/metrics.json python dashboard.py
+BRAIN_METRICS = Path(os.environ.get("BRAIN_METRICS", "/dev/null/nonexistent"))
+if not os.environ.get("BRAIN_METRICS"):
+    BRAIN_METRICS = None  # No brain metrics unless explicitly configured
 
 
 def _load_tasks():
@@ -49,9 +53,15 @@ def _load_tasks():
             ap = DATA_DIR / "audit" / f"{task['task_id']}.jsonl"
             if ap.exists():
                 try:
-                    evs = AuditTrail(ap, b"dummy").read_trail(task["task_id"])
+                    # NOTE: Dashboard reads audit events for display only.
+                    # Cryptographic HMAC verification requires the derived audit key
+                    # which is not available to the dashboard (by design — key stays
+                    # in vault). Use `pf audit <task_id>` CLI for full verification.
+                    evs = AuditTrail(ap, b"display-only").read_trail(task["task_id"])
                     n_events = len(evs)
-                    audit_ok = all(e.get("tamper_ok", True) for e in evs)
+                    # Dashboard does NOT claim tamper verification — that requires
+                    # the real audit key. We show structural presence only.
+                    audit_ok = None  # Use CLI `pf audit` for cryptographic proof
                 except Exception:
                     pass
             out.append({
@@ -70,7 +80,7 @@ def _load_tasks():
 
 
 def _load_brain():
-    if not BRAIN_METRICS.exists():
+    if BRAIN_METRICS is None or not BRAIN_METRICS.exists():
         return None
     try:
         return json.load(BRAIN_METRICS.open())
@@ -195,7 +205,8 @@ def _render():
 
     @app.route("/api/health")
     def health():
-        return jsonify({"status": "ok", "tasks": len(_load_tasks()), "brain_available": BRAIN_METRICS.exists(), "timestamp": datetime.utcnow().isoformat()})
+        brain_avail = BRAIN_METRICS.exists() if BRAIN_METRICS is not None else False
+        return jsonify({"status": "ok", "tasks": len(_load_tasks()), "brain_available": brain_avail, "timestamp": datetime.utcnow().isoformat()})
 
     return app
 

@@ -1,7 +1,6 @@
 """AgentPathfinder v2 — Task decomposition and state management (Phases 1-5)."""
 import json
 import os
-import fcntl
 import tempfile
 import uuid
 import time
@@ -11,6 +10,12 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from enum import Enum
+
+try:
+    import fcntl
+    _HAS_FCNTL = True
+except ImportError:
+    _HAS_FCNTL = False  # Windows — advisory locking disabled
 
 from .pathfinder_core import (
     generate_master_key, split_key, hash_key,
@@ -80,7 +85,10 @@ class TaskEngine:
     # ------------------------------------------------------------------
     @contextmanager
     def _lock_task(self, task_id: str):
-        """Exclusive advisory lock on a task's lock file."""
+        """Exclusive advisory lock on a task's lock file (no-op on Windows)."""
+        if not _HAS_FCNTL:
+            yield  # Windows — no advisory locking
+            return
         lock_path = self.tasks_dir / f"{task_id}.lock"
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         lock_fd = open(lock_path, "w")
@@ -93,7 +101,10 @@ class TaskEngine:
 
     @contextmanager
     def _lock_vault_shard(self, task_id: str, step_number: int):
-        """Exclusive advisory lock on a vault shard file."""
+        """Exclusive advisory lock on a vault shard file (no-op on Windows)."""
+        if not _HAS_FCNTL:
+            yield  # Windows — no advisory locking
+            return
         lock_dir = self.vault_dir / task_id
         lock_dir.mkdir(parents=True, exist_ok=True)
         lock_path = lock_dir / f"{step_number}.shard.lock"
