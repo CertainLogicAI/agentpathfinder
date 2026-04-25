@@ -1,5 +1,6 @@
 {
   "name": "agentpathfinder",
+  "displayName": "AgentPathfinder",
   "version": "1.0.6",
   "description": "Deterministic task orchestration with cryptographic sharding, tamper-proof audit trails, and agent authentication. Free forever, no usage limits. See SAFETY.md for full security disclosure.",
   "author": "CertainLogic",
