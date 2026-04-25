@@ -1,6 +1,6 @@
 {
   "name": "agentpathfinder",
-  "version": "1.0.0-beta1",
+  "version": "1.0.0",
   "description": "Deterministic task orchestration with cryptographic sharding, tamper-proof audit trails, and agent authentication",
   "author": "CertainLogic",
   "license": "MIT",
