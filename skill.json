@@ -1,7 +1,7 @@
 {
   "name": "agentpathfinder",
-  "version": "1.0.0",
-  "description": "Deterministic task orchestration with cryptographic sharding, tamper-proof audit trails, and agent authentication",
+  "version": "1.0.6",
+  "description": "Deterministic task orchestration with cryptographic sharding, tamper-proof audit trails, and agent authentication. Free forever, no usage limits. See SAFETY.md for full security disclosure.",
   "author": "CertainLogic",
   "license": "MIT",
   "entry": "scripts/pathfinder_client.py",
@@ -11,5 +11,7 @@
   "requires": ["python3"],
   "config": {
     "data_dir": "./pathfinder_data"
-  }
+  },
+  "safety": "SAFETY.md",
+  "repository": "https://github.com/CertainLogicAI/agentpathfinder"
 }

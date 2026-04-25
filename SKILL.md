@@ -2,8 +2,10 @@
 summary: "Tamper-evident cryptographic tracking for AI agent siblings"
 read_when: ["installing", "configuring", "troubleshooting"]
 name: agentpathfinder
-description: "Unlimited tamper-evident cryptographic task tracking for AI agents. Green = proven complete. Red = failed or incomplete. Free forever — upgrade for dashboard, multi-agent views, and full audit exports."
-version: 1.0.3
+description: "Unlimited tamper-evident cryptographic task tracking for AI agents. Green = proven complete. Red = failed or incomplete. Free forever — upgrade for dashboard, multi-agent views, and full audit exports.  
+
+Security: Open-source, no network access, no data collection. See SAFETY.md for full disclosure."
+version: 1.0.6
 author: CertainLogic
 license: MIT
 platforms: [linux, macos, windows]
