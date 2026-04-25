@@ -29,6 +29,7 @@ from agentpathfinder import (
 )
 
 # Import visual helpers
+sys.path.insert(0, str(_SCRIPT_DIR))
 from visual import (
     fmt_status, fmt_audit_event, fmt_step_complete, fmt_step_failed,
     fmt_task_complete, fmt_task_failed, fmt_reconstruct_ok, fmt_reconstruct_fail,
