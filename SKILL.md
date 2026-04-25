@@ -19,7 +19,7 @@ AgentPathfinder gives your AI agents cryptographic proof of task completion. Dec
 
 ## What You Get
 
-| Free | Pro ($29/mo) |
+| Free (Now) | Pro (Coming Soon) |
 |------|-------------|
 | ✅ Unlimited tamper-evident tracking via green/red in messages | 🖥️ Beautiful dead-simple dashboard |
 | ✅ Cryptographic sharding (XOR-based, 256-bit) | 📊 Multi-agent sibling tracking |
@@ -185,7 +185,7 @@ The dashboard shows:
 
 ## License
 
-MIT. Free forever. No usage caps. Upgrade to Pro for dashboard and team features.
+MIT. Free forever. No usage caps. Pro dashboard coming soon.
 
 ---
 
