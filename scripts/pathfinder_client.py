@@ -135,8 +135,7 @@ def cli_run(args):
     client = PathfinderClient()
     print(f"{WARN} SIMULATION MODE — No real code executed.")
     print(f"    Use Python SDK for production execution.")
-    print(f"    Docs: github.com/CertainLogicAI/agentpathfinder#sdk
-")
+    print(f"    Docs: github.com/CertainLogicAI/agentpathfinder#sdk")
     print(f"{SPINNER} Running task {dim(args.task_id)}...")
     status = client.run(args.task_id)
     print("")
