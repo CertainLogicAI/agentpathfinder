@@ -20,39 +20,15 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 # ── Import resolution ───────────────────────────────────────────────
-try:
-    from agentpathfinder import (
-        TaskEngine, IssuingLayer, AgentRuntime, AuditTrail,
-        generate_master_key, split_key, reconstruct_key,
-        hmac_sign, verify_hmac, hash_key, derive_key,
-    )
-except ImportError:
-    _SCRIPT_DIR = Path(__file__).resolve().parent
-    _POSSIBLE_PATHS = [
-        _SCRIPT_DIR / ".." / ".." / ".." / "agentpathfinder",
-        _SCRIPT_DIR / ".." / ".." / "agentpathfinder",
-        _SCRIPT_DIR / ".." / "agentpathfinder",
-    ]
-    for _p in _POSSIBLE_PATHS:
-        if (_p / "pathfinder_core.py").exists():
-            sys.path.insert(0, str(_p.parent))
-            try:
-                from agentpathfinder import (
-                    TaskEngine, IssuingLayer, AgentRuntime, AuditTrail,
-                    generate_master_key, split_key, reconstruct_key,
-                    hmac_sign, verify_hmac, hash_key, derive_key,
-                )
-                break
-            except ImportError:
-                continue
-    else:
-        print("ERROR: Cannot find agentpathfinder package.")
-        print("Ensure agentpathfinder/ is on PYTHONPATH or symlinked next to the skill.")
-        sys.exit(1)
+_SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(_SCRIPT_DIR.parent))
+from agentpathfinder import (
+    TaskEngine, IssuingLayer, AgentRuntime, AuditTrail,
+    generate_master_key, split_key, reconstruct_key,
+    hmac_sign, verify_hmac, hash_key, derive_key,
+)
 
 # Import visual helpers
-_SCRIPT_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(_SCRIPT_DIR))
 from visual import (
     fmt_status, fmt_audit_event, fmt_step_complete, fmt_step_failed,
     fmt_task_complete, fmt_task_failed, fmt_reconstruct_ok, fmt_reconstruct_fail,
@@ -157,6 +133,10 @@ def cli_create(args):
 
 def cli_run(args):
     client = PathfinderClient()
+    print(f"{WARN} SIMULATION MODE — No real code executed.")
+    print(f"    Use Python SDK for production execution.")
+    print(f"    Docs: github.com/CertainLogicAI/agentpathfinder#sdk
+")
     print(f"{SPINNER} Running task {dim(args.task_id)}...")
     status = client.run(args.task_id)
     print("")
