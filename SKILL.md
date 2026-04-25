@@ -1,272 +1,192 @@
 ---
-summary: "AgentPathfinder v2"
+summary: "Tamper-evident cryptographic tracking for AI agent siblings"
 read_when: ["installing", "configuring", "troubleshooting"]
+name: agentpathfinder
+description: "Unlimited tamper-evident cryptographic task tracking for AI agents. Green = proven complete. Red = failed or incomplete. Free forever — upgrade for dashboard, multi-agent views, and full audit exports."
+version: 1.0.3
+author: CertainLogic
+license: MIT
+platforms: [linux, macos, windows]
 ---
 
 # AgentPathfinder
 
-Deterministic task orchestration with cryptographic sharding. Decompose any task into N substeps, shard a master key via XOR across them, and reconstruct only when every step completes successfully. Tamper-proof audit trails, crash recovery, file locking, and agent authentication included.
+**Green = cryptographically proven complete. Red = not. Dead simple in every reply.**
 
-## What is AgentPathfinder
+AgentPathfinder gives your AI agents cryptographic proof of task completion. Decompose any task into N steps, shard a master key across them via XOR, and only reconstruct the key when every step finishes successfully. Every event is HMAC-SHA256 signed and written to an append-only audit trail.
 
-AgentPathfinder splits a 256-bit master key into N+1 shards using XOR: one per substep plus one held by the issuer. Step shards live in a filesystem vault, never in the task JSON. The master key is only reconstructible when **all** substeps finish. Every event is HMAC-SHA256 signed and written to an append-only JSONL audit trail. Agents authenticate with shared-secret HMAC tokens. No database required.
+**Free forever, unlimited tasks, no usage caps.** Upgrade when you want a dashboard, multi-agent views, or exportable audit files.
 
-## Visual Confirmation Messages
+## What You Get
 
-Every CLI reply uses at-a-glance emoji indicators:
+| Free | Pro ($29/mo) |
+|------|-------------|
+| ✅ Unlimited tamper-evident tracking via green/red in messages | 🖥️ Beautiful dead-simple dashboard |
+| ✅ Cryptographic sharding (XOR-based, 256-bit) | 📊 Multi-agent sibling tracking |
+| ✅ Audit trail with HMAC verification | 📋 Full audit exports (CSV/JSON) |
+| ✅ Crash recovery + atomic writes | 🔗 Webhook notifications |
+| ✅ CLI with visual confirmations | 📧 Priority support |
 
-| State | Visual |
-|-------|--------|
-| Task complete | `✅ Task complete` |
-| Task failed | `❌ Task failed` + error + retry suggestion |
-| Step running | `⏳ Step N running...` |
-| Audit verified | `✅ All N events verified` |
-| Audit tampered | `❌ N events TAMPERED` |
-| Key reconstructed | `✅ Key reconstructed` |
-| Crash detected | `⚠️ Crash detected` + reset suggestion |
+**Enterprise:** On-prem deployment, SSO/SAML, exportable tamper-proof audit files for compliance.
 
-## Quick Reference
-
-| Need | Command |
-|------|---------|
-| Install + init | `pf install` |
-| Create a task | `pf create <name> [step_name...]` |
-| Run all steps | `pf run <task_id>` |
-| Check status | `pf status <task_id>` |
-| Show audit trail | `pf audit <task_id>` |
-| Reconstruct key | `pf reconstruct <task_id>` |
-| Register agent | `pf register-agent <agent_id>` |
-| Start dashboard | `pf dashboard --start` |
-
-## One-Command Install
-
-```bash
-clawhub install agentpathfinder
-pf install            # init data dirs + print ready banner
-```
-
-Output:
-```
-🚀 AgentPathfinder v2 Ready!
-   ✅ Skill installed
-   ✅ Data directory initialized
-   🖥️ Dashboard:  pf dashboard --start
-   ℹ️ Quick start:  pf create my_task step1 step2
-```
-
-## Installation
-
-### 1. Install the skill
+## Install
 
 ```bash
 clawhub install agentpathfinder
 ```
 
-### 2. Initialize
-
+Then verify:
 ```bash
 pf install
 ```
 
-This creates `./pathfinder_data/` with subdirs `tasks`, `vault`, `audit`, `agents`.
-
-### 3. Verify import
+## Quickstart
 
 ```bash
-python3 -c "from pathfinder_client import PathfinderClient; print('OK')"
+# Create a 4-step deployment task
+pf create "deploy_api" "run_tests" "build_docker" "push_registry" "restart_service"
+# → Task created: a7f3d2e1-...
+
+# Run it (simulation mode — see what it looks like)
+pf run a7f3d2e1-...
+# → ⏳ SIMULATION MODE — No real code executed.
+#    ✅ deploy_api is complete! Progress: 4/4
+#    ✅ Step 1 complete: run_tests (token: tok_abc123…)
+#    ✅ Step 2 complete: build_docker (token: tok_def456…)
+
+# Check status — one glance says it all
+pf status a7f3d2e1-...
+# → ✅ task_complete 4/4 (all green)
+
+# Verify audit integrity
+pf audit a7f3d2e1-...
+# → ✅ All 6 events verified
+
+# Reconstruct the master key (only works when all steps pass)
+pf reconstruct a7f3d2e1-...
+# → ✅ Key reconstructed successfully
 ```
 
-### 4. Use in your agent
+## Real Execution (Python SDK)
 
-```python
-import sys
-sys.path.insert(0, "/usr/local/lib/node_modules/openclaw/skills/agentpathfinder/scripts")
-from pathfinder_client import PathfinderClient
-
-client = PathfinderClient()
-
-# Create a multi-step task
-task_id = client.create("deploy_service", [
-    "build_image", "push_registry", "update_k8s", "verify_health"
-])
-print(f"Created: {task_id}")
-
-# Check status (with visual emoji formatting)
-print(client.status(task_id))
-
-# View audit trail
-for ev in client.audit(task_id):
-    print(ev)
-
-# Reconstruct master key (only after all steps complete)
-key = client.reconstruct(task_id)
-```
-
-## CLI Usage
-
-### pf create — Create a new task
-
-```bash
-pf create "deploy" build push verify
-# ✅ Task created: <task_id>
-```
-
-### pf run — Simulate running all steps
-
-```bash
-pf run <task_id>
-# ✅ deploy is complete! ID: <task_id>
-#    Progress: 3/3
-#    ✅ Step 1 complete: build (token: tok_abc…)
-#    ✅ Step 2 complete: push (token: tok_def…)
-#    ✅ Step 3 complete: verify (token: tok_ghi…)
-```
-
-### pf status — Show task status
-
-```bash
-pf status <task_id>
-# Task: deploy (<task_id>)
-# State: task_complete
-# Progress: 3/3
-#
-# Steps:
-#   ✅ Step 1: build   token: tok_abc…
-#   ✅ Step 2: push    token: tok_def…
-#   ✅ Step 3: verify  token: tok_ghi…
-```
-
-### pf audit — Show signed audit trail
-
-```bash
-pf audit <task_id>
-# ✅ All 5 events verified
-```
-
-### pf reconstruct — Reconstruct master key
-
-```bash
-pf reconstruct <task_id>
-# ✅ Key reconstructed successfully
-#    Key hash: 51e2bb5…
-```
-
-### pf register-agent — Register an agent
-
-```bash
-pf register-agent agent_alpha
-# ✅ Agent registered: agent_alpha
-#    🔑 API key: 0703e5a…b94527
-```
-
-## Dashboard
-
-One command starts the web dashboard:
-
-```bash
-pf dashboard --start
-```
-
-Or directly:
-
-```bash
-python3 scripts/dashboard_server.py --port 8080
-```
-
-What you get:
-- **Tasks panel** — live task list with step progress, audit integrity, tokens
-- **Brain API stats** — cache hit rate, tokens saved, $ saved, validations, hallucinations caught
-- **Auto-refresh** — page reloads every 30s
-- **JSON exports** — `/api/tasks`, `/api/brain`, `/api/health`
-
-No Flask, no dependencies — pure Python stdlib.
-
-## SDK Usage
+The CLI marks steps complete for demo. For real automation, bind Python functions:
 
 ```python
 from pathfinder_client import PathfinderClient
+from agentpathfinder import AgentRuntime
 
 pf = PathfinderClient()
+tid = pf.create("deploy", ["test", "build", "push"])
 
-# Creation
-tid = pf.create("migration", ["backup", "migrate", "validate"])
+# Bind real functions
+def run_tests():
+    subprocess.run(["pytest", "-v"], check=True)
+    return "passed"
 
-# Simulation run
-pf.run(tid)
+def build_docker():
+    subprocess.run(["docker", "build", "-t", "app", "."], check=True)
+    return "app:latest"
 
-# Status with emojis
-st = pf.status(tid)
-print(st["overall_state"], st["progress"])
+# Execute
+runtime = AgentRuntime(pf.engine, pf.issuing)
+runtime.execute_task(tid, {
+    "test": run_tests,
+    "build": build_docker,
+    "push": lambda: subprocess.run(["docker", "push", "app"], check=True),
+})
 
-# Audit
-for ev in pf.audit(tid):
-    print(ev["event"], ev.get("tamper_ok"))
-
-# Reconstruct
-key = pf.reconstruct(tid)
-print(f"Key hex: {key.hex()[:16]}...")
-
-# Agents
-api_key = pf.register_agent("worker_1")
-print(f"API key: {api_key}")
-
-# Brain stats
-stats = pf.brain_stats()
-print(f"Cache hit rate: {stats['cache']['hit_rate_percent']:.1f}%")
+# If any step fails → task pauses, audit trail shows exactly what happened
+# Retry after fixing:
+runtime.retry_step(tid, 2, build_docker)
 ```
 
 ## Architecture
 
 ```
-┌─────────────────┐     create_task()     ┌──────────────┐
-│   CLI / SDK     │ ────────────────────▶ │  TaskEngine  │
-│  (pf create...) │                       │              │
-└─────────────────┘                       │ - generate K │
-        │                                 │ - split(K,N) │
-        │                                 │ - write JSON │
-        │                                 └──────────────┘
-        │                                        │
-        │                                 vault: step shards
-        │                                 task JSON: metadata
-        ▼                                        │
-┌─────────────────┐         ┌──────────────┐    │
-│  AgentRuntime   │◄────────│ IssuingLayer │◄───┘
-│  (execute_step) │  token  │              │
-└─────────────────┘         │ - shard vault│
-        │                   │ - HMAC sign  │
-        │                   │ - audit log  │
-        ▼                   └──────────────┘
-┌─────────────────┐                ▲
-│   AuditTrail    │◄───────────────┘
-│  (JSONL + HMAC) │
-└─────────────────┘
+┌─────────────┐  create_task()   ┌──────────────┐
+│   CLI/SDK   │ ───────────────▶ │  TaskEngine  │
+│ (pf create) │                  │              │
+└─────────────┘                  │ - Generate K │
+                                 │ - Split(K,N) │
+                                 │ - Write JSON │
+                                 └──────────────┘
+                                        │
+                                 Vault: step shards
+                                 Tasks: metadata only
+                                        │
+┌─────────────┐         ┌──────────────┘
+│ AgentRuntime│◄────────│ IssuingLayer │
+│(execute_step│  token  │              │
+└─────────────┘         │ - HMAC sign  │
+        │               │ - Audit log  │
+        ▼               └──────────────┘
+┌─────────────┐                ▲
+│ AuditTrail  │◄───────────────┘
+│(JSONL+HMAC) │
+└─────────────┘
 ```
 
-## Security Features
+## Security
 
-| Feature | How it works |
+**Tamper-evident, not tamper-proof.** Every event is HMAC-SHA256 signed with a derived audit key. If someone modifies the audit trail or task files, verification fails and you know immediately.
+
+**Current limitations:** A malicious agent with filesystem access could read vault shards and reconstruct the key. For full isolation, upgrade to Pro (hosted vault) or Enterprise (TEE/remote attestation).
+
+| Feature | How It Works |
 |---------|-------------|
-| **Cryptographic Sharding** | Master key split into N+1 shards via XOR. Step shards isolated in filesystem vault. |
-| **Tamper Evidence** | Every audit event HMAC-SHA256 signed with a key derived from the master key. Any edit breaks verification. |
-| **Crash Recovery** | Steps enter a `running` state with an idempotency key. Crashed steps are detected and reset to `pending`. |
-| **Concurrency Control** | Advisory file locks (`fcntl.LOCK_EX`) per task prevent concurrent writes. |
-| **Atomic Writes** | All file writes go through temp file + `fsync` + `os.rename`, eliminating partial writes. |
-| **Agent Authentication** | Agents register once and receive a 256-bit shared secret. Every step request must carry a valid HMAC-SHA256 signature. |
-| **Key Derivation** | Audit signing key is derived from the master key via HMAC("audit_signing_key"). Raw master key never touches the audit code. |
-| **Strict All-or-Nothing** | Key reconstruction fails unless **every** step is complete and hashes match. No partial credit. |
+| Cryptographic sharding | 256-bit master key split into N+1 shards via XOR |
+| Atomic persistence | temp + fsync + rename — no partial writes |
+| Crash recovery | Steps in `running` state detected and reset |
+| Concurrency control | Advisory file locks per task |
+| Audit integrity | HMAC-SHA256 chain, any edit breaks verification |
+| Agent authentication | Shared-secret HMAC tokens per agent |
+
+## CLI Reference
+
+| Command | What It Does |
+|---------|-------------|
+| `pf install` | One-command setup, verify deps |
+| `pf create <name> [steps...]` | Create a new sharded task |
+| `pf run <task_id>` | Simulate running all steps |
+| `pf status <task_id>` | Visual status: ✅/❌/⏳ at a glance |
+| `pf audit <task_id>` | Show tamper-verified audit trail |
+| `pf reconstruct <task_id>` | Reconstruct master key (all steps required) |
+| `pf register-agent <id>` | Register an agent for authenticated execution |
+| `pf dashboard` | Start web dashboard (requires Flask) |
+
+## Dashboard
+
+```bash
+# Generate a static HTML dashboard (no server needed)
+python3 scripts/dashboard_static.py --output report.html
+# Open report.html in your browser
+
+# Or start live dashboard
+pf dashboard --port 8080
+# Open http://localhost:8080
+```
+
+The dashboard shows:
+- **Tasks tab:** Live status, progress bars, step icons, audit badges
+- **Brain Stats tab:** Token savings, cache hit rate, $ saved, hallucinations caught
+- **CSV export:** One-click report download
 
 ## Troubleshooting
 
-| Issue | Fix |
-|-------|-----|
-| "Task not found" | Verify the task_id. Tasks live in `./pathfinder_data/tasks/`. |
-| "Reconstruction failed" | Not all steps are complete. Run `pf status` to see which steps are pending/failed. |
-| "Step already running" | A previous run crashed. Run `pf status` to find crashed steps, or call `reset_running_step()` via SDK. |
-| "Agent authentication failed" | The agent is unregistered or the HMAC signature is wrong. Re-run `pf register-agent <id>`. |
-| Audit reports tampered | Stop immediately. The audit trail or task JSON was modified outside the engine. Investigate the filesystem. |
-| ImportError on `agentpathfinder` | Symlink `../../agentpathfinder` into the skill scripts dir, or adjust `sys.path` to your source checkout. |
-| Dashboard won't start | Port 8080 may be in use. Use `pf dashboard --port 9090`. |
+| Problem | Fix |
+|---------|-----|
+| "agentpathfinder not found" | Run `pf install` to verify setup |
+| "Task not found" | Check task ID. Use `pf status` to list recent tasks |
+| "Reconstruction failed" | Not all steps complete. Run `pf status` to see which |
+| "Step already running" | Previous run crashed. Auto-reset or call `reset_running_step()` |
+| "Agent auth failed" | Re-run `pf register-agent <id>` |
+| Dashboard won't start | Install Flask: `pip install flask` |
+| Audit reports tampered | Files were modified outside the engine. Investigate immediately |
 
 ## License
 
-MIT
+MIT. Free forever. No usage caps. Upgrade to Pro for dashboard and team features.
+
+---
+
+Built by [CertainLogic](https://certainlogic.ai) — deterministic AI, cryptographic proof.
