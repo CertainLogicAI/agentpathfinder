@@ -23,10 +23,10 @@ class QueryCache:
     ):
         self._max_size = max_size
         self._metrics_path = metrics_path or Path(
-            "/data/.openclaw/workspace/agentpathfinder/cache_metrics.json"
+            "./cache_metrics.json"
         )
         self._cache_path = cache_path or Path(
-            "/data/.openclaw/workspace/agentpathfinder/cache_data.json"
+            "./cache_data.json"
         )
         
         # Load persisted cache

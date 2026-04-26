@@ -12,10 +12,10 @@ import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-sys.path.insert(0, "/data/.openclaw/workspace/agentpathfinder")
+# sys.path fixed at install time
 from brain_tool import brain_lookup, brain_status
 
-sys.path.insert(0, "/data/.openclaw/workspace/opensource/scripts")
+sys.path.insert(0, "./scripts")
 from hermes_brain_client import BrainClient
 
 
@@ -164,7 +164,7 @@ class CertainLogicBrainSkill:
         }
         
         # Persist to file
-        metrics_path = Path("/data/.openclaw/workspace/agentpathfinder/brain_metrics.json")
+        metrics_path = Path("./brain_metrics.json")
         with open(metrics_path, "w") as f:
             json.dump(report, f, indent=2)
         

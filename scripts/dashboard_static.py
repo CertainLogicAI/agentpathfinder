@@ -29,7 +29,7 @@ except ImportError:
         sys.exit(1)
 
 DATA_DIR = Path("./pathfinder_data")
-BRAIN_METRICS = Path("/data/.openclaw/workspace/agentpathfinder/metrics.json")
+BRAIN_METRICS = Path("./metrics.json")
 
 
 def _load_tasks():
