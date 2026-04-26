@@ -2,7 +2,7 @@
   "schemaVersion": "2024-v2",
   "id": "certainlogicai.agentpathfinder",
   "displayName": "AgentPathfinder",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Open-source task router for AI agents. Now includes Brain-First query optimization, Hallucination Guard, and Task Tracking — the Trinity Stack.",
   "repository": "https://github.com/CertainLogicAI/agentpathfinder",
   "entrypoints": {
