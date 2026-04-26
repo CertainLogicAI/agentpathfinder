@@ -28,6 +28,7 @@ from brain_skill import CertainLogicBrainSkill
 _brain_skill: Optional[CertainLogicBrainSkill] = None
 _original_tool_call = None  # Will hold reference to original dispatch
 _metrics_log = Path(__file__).parent / "brain_hook_metrics.jsonl"
+_session_cache: Dict[str, Any] = {}  # In-memory session cache for speed
 
 
 def _ensure_brain() -> CertainLogicBrainSkill:
@@ -59,6 +60,10 @@ def brain_first_dispatch(tool_name: str, query: str, **kwargs) -> Dict[str, Any]
     """
     brain = _ensure_brain()
     
+    # Skip empty queries
+    if not query or len(query.strip()) < 3:
+        return {"status": "pass_through", "reason": "empty_query"}
+    
     # Only intercept query-like tools
     query_tools = {
         "ask", "query", "search", "lookup", "find", "get_info",
@@ -69,13 +74,35 @@ def brain_first_dispatch(tool_name: str, query: str, **kwargs) -> Dict[str, Any]
         # Not a query — pass through to original handler
         return _call_original(tool_name, query, **kwargs)
     
+    # === SESSION CACHE (fast path) ===
+    cache_key = f"{tool_name}:{query.lower().strip()}"
+    if cache_key in _session_cache:
+        cached = _session_cache[cache_key]
+        _loghook("brain_session_cache_hit", {"query": query, "latency_ms": 0})
+        print(f"[BrainFirst] 💾 SESSION CACHE — '{query[:60]}...' (instant)")
+        return cached
+    
     # === BRAIN FIRST ===
-    start = time.time()
-    result = brain.ask(query)
-    elapsed_ms = round((time.time() - start) * 1000, 2)
+    try:
+        start = time.time()
+        result = brain.ask(query)
+        elapsed_ms = round((time.time() - start) * 1000, 2)
+    except Exception as e:
+        # Brain is down — pass through gracefully
+        _loghook("brain_error", {"query": query, "error": str(e)})
+        print(f"[BrainFirst] ⚠️ BRAIN ERROR — '{query[:60]}...' → {e}")
+        return _call_original(tool_name, query, **kwargs)
     
     if result["brain_hit"]:
         # Instant answer — no LLM needed
+        answer = {
+            "status": "brain_hit",
+            "answer": result["answer"],
+            "source": "brain_fact",
+            "latency_ms": elapsed_ms,
+            "tokens_saved": result.get("tokens_saved", 500),
+        }
+        _session_cache[cache_key] = answer  # Cache for this session
         _loghook("brain_hit", {
             "query": query,
             "answer": str(result["answer"])[:200],
@@ -84,13 +111,7 @@ def brain_first_dispatch(tool_name: str, query: str, **kwargs) -> Dict[str, Any]
             "tool": tool_name,
         })
         print(f"[BrainFirst] ✅ HIT — '{query[:60]}...' ({elapsed_ms}ms)")
-        return {
-            "status": "brain_hit",
-            "answer": result["answer"],
-            "source": "brain_fact",
-            "latency_ms": elapsed_ms,
-            "tokens_saved": result.get("tokens_saved", 500),
-        }
+        return answer
     
     # Brain missed — fall through to LLM
     _loghook("brain_miss", {
