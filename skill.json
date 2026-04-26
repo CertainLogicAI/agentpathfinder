@@ -1,21 +1,36 @@
 {
-  "name": "agentpathfinder",
+  "schemaVersion": "2024-v2",
+  "id": "certainlogicai.agentpathfinder",
   "displayName": "AgentPathfinder",
-  "version": "1.0.6",
-  "description": "Deterministic task orchestration with cryptographic sharding, tamper-proof audit trails, and agent authentication. Free forever, no usage limits. See SAFETY.md for full security disclosure.",
-  "author": "CertainLogic",
-  "license": "MIT",
-  "entry": "scripts/pathfinder_client.py",
-  "bin": {
-    "pf": "scripts/pathfinder_client.py"
-  },
-  "requires": ["python3"],
-  "config": {
-    "data_dir": "./pathfinder_data"
-  },
-  "safety": "SAFETY.md",
+  "version": "1.2.1",
+  "description": "Open-source task router for AI agents. Now includes Brain-First query optimization, Hallucination Guard, and Task Tracking — the Trinity Stack.",
   "repository": "https://github.com/CertainLogicAI/agentpathfinder",
-  "scripts": {
-    "postinstall": "echo 'Install complete. Run: pf install'"
-  }
+  "entrypoints": {
+    "cli": {
+      "command": [
+        "python3",
+        "-m",
+        "agentpathfinder"
+      ]
+    }
+  },
+  "exports": {
+    "trinity_stack": "agentpathfinder.trinity_stack:activate",
+    "brain_hook": "agentpathfinder.brain_hook:activate_brain_first",
+    "brain_skill": "agentpathfinder.brain_skill:CertainLogicBrainSkill",
+    "task_tracking": "agentpathfinder.trinity_stack:start_task"
+  },
+  "tags": [
+    "productivity",
+    "open-source",
+    "trust",
+    "cost-optimization",
+    "tamper-evident"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "CertainLogic",
+    "url": "https://github.com/CertainLogicAI"
+  },
+  "safety": "SAFETY.md"
 }
