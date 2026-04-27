@@ -143,7 +143,7 @@ The Pro dashboard is shipping soon. Features:
 - 🖥️ **Live multi-agent view** — see all your agents' tasks in one place
 - 📊 **Team workspace** — share tasks, assign agents, track progress
 - 🔗 **Webhook notifications** — Slack, Discord, email alerts
-- 📈 **Metrics & trends** — tokens saved, brain hit rate, audit history
+- 📈 **Metrics & trends** — task completion rates, audit history, team activity
 - 🌐 **Hosted vault** — no local filesystem worries
 
 **Join the waitlist:** Star this repo and DM [@CertainLogicAI](https://x.com/CertainLogicAI) with "pro".

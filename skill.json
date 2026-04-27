@@ -2,8 +2,8 @@
   "schemaVersion": "2024-v2",
   "id": "certainlogicai.agentpathfinder",
   "displayName": "AgentPathfinder",
-  "version": "1.2.3",
-  "description": "Open-source task router for AI agents. Now includes Brain-First query optimization, Hallucination Guard, and Task Tracking — the Trinity Stack.",
+  "version": "1.2.7",
+  "description": "Tamper-evident cryptographic task tracking for AI agents. Local-first: all data stays in ~/.agentpathfinder. No telemetry, no external servers, no usage caps.",
   "repository": "https://github.com/CertainLogicAI/agentpathfinder",
   "entrypoints": {
     "cli": {
@@ -15,17 +15,16 @@
     }
   },
   "exports": {
-    "trinity_stack": "agentpathfinder.trinity_stack:activate",
-    "brain_hook": "agentpathfinder.brain_hook:activate_brain_first",
-    "brain_skill": "agentpathfinder.brain_skill:CertainLogicBrainSkill",
-    "task_tracking": "agentpathfinder.trinity_stack:start_task"
+    "task_tracking": "agentpathfinder.task_engine:TaskEngine",
+    "audit_trail": "agentpathfinder.audit_trail:AuditTrail"
   },
   "tags": [
     "productivity",
     "open-source",
     "trust",
-    "cost-optimization",
-    "tamper-evident"
+    "tamper-evident",
+    "cryptography",
+    "task-tracking"
   ],
   "license": "MIT",
   "author": {

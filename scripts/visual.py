@@ -234,22 +234,20 @@ def fmt_dashboard_url(port: int) -> str:
     return f"{DASHBOARD} Dashboard live at {bold(f'http://localhost:{port}')}"
 
 
-# ── Brain API Stats Visuals ────────────────────────────────────────
-def fmt_brain_stats(stats: Dict[str, Any]) -> str:
-    """Format Brain API metrics with visual badges."""
-    cache = stats.get("cache", {})
-    brain = stats.get("brain_api", {})
-    rate = cache.get("hit_rate_percent", 0)
+# ── Task Summary Visuals ─────────────────────────────────────────────
+def fmt_task_summary(tasks: List[dict]) -> str:
+    """Format task summary with visual badges."""
+    count = len(tasks) if tasks else 0
+    if not count:
+        return f"  {INFO} No active tasks"
+    
+    complete = sum(1 for t in tasks if t.get("status") == "complete")
     lines = [
         "",
-        f"{CHART} {bold('Brain API Stats')}",
-        f"  {PASS} Cache hit rate:   {green(f'{rate:.1f}%')}",
-        f"     Hits: {cache.get('hits', 0)}   Misses: {cache.get('misses', 0)}",
-        f"  {PASS} Brain queries:    {brain.get('queries', 0)}",
-        f"  {PASS} Tokens saved:     {brain.get('tokens_saved', 0)}",
-        f"  {PASS} Validations:      {brain.get('validations', 0)}",
-        f"  {SHEILD} Hallucinations caught: {brain.get('hallucinations_caught', 0)}",
-        f"  {STAR} Est. $ saved:     ${brain.get('est_cost_saved_usd', 0):.4f}",
+        f"{CHART} {bold('Task Summary')}",
+        f"  {PASS} Active tasks:     {count}",
+        f"  {PASS} Complete:         {complete}",
+        f"  {SPINNER} In progress:      {count - complete}",
     ]
     return "\n".join(lines)
 
@@ -257,11 +255,12 @@ def fmt_brain_stats(stats: Dict[str, Any]) -> str:
 def fmt_install_ready() -> str:
     """The 'we're ready' banner."""
     return (
-        f"\n{ROCKET} {bold(color('AgentPathfinder v2 Ready!', 'green', 'bold'))}\n"
+        f"\n{ROCKET} {bold(color('AgentPathfinder Ready!', 'green', 'bold'))}\n"
         f"   {PASS} Skill installed\n"
         f"   {PASS} Data directory initialized\n"
-        f"   {DASHBOARD} Dashboard:  {bold('pf dashboard --start')}\n"
+        f"   {DASHBOARD} Dashboard:  {bold('pf dashboard')}\n"
         f"   {INFO} Quick start:  {bold('pf create my_task step1 step2')}\n"
+        f"\n{faint('All data stays in ~/.agentpathfinder — no external servers.')}\n"
     )
 
 

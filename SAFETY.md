@@ -2,15 +2,15 @@
 
 **Agent Pathfinder** — Transparent security practices for users and auditors.
 
-**Last updated:** 2026-04-25  
-**Version:** 1.0.5  
+**Last updated:** 2026-04-27
+**Version:** 1.2.7
 **License:** MIT-0
 
 ---
 
 ## What This Tool Does
 
-Agent Pathfinder tracks AI agent task completion using **cryptographic sharding**: splitting a random 256-bit key into pieces (shards) across task steps. Only when all steps report success can the original key be reconstructed. This provides machine-verifiable proof that every required step finished.
+AgentPathfinder tracks AI agent task completion using **cryptographic sharding**: splitting a random 256-bit key into pieces (shards) across task steps. Only when all steps report success can the original key be reconstructed. This provides machine-verifiable proof that every required step finished.
 
 This is **not encryption of user data**. It is a tamper-evident coordination mechanism for task workflow state.
 
@@ -18,14 +18,14 @@ This is **not encryption of user data**. It is a tamper-evident coordination mec
 
 ## What Data Is Stored
 
-### On Your Machine (Local Mode)
+**All data stays in `~/.agentpathfinder/` only.** No external servers, no telemetry, no analytics.
 
 | Data | Location | Content | Purpose |
 |------|----------|---------|---------|
 | Task metadata | `~/.agentpathfinder/tasks/*.json` | Task name, step names, UUID, timestamps | Track what tasks exist and their state |
 | Vault shards | `~/.agentpathfinder/vault/*.shard` | One 32-byte random shard per step + 1 recovery shard | Cryptographic proof—only reconstructable when all steps pass |
 | Audit trail | `~/.agentpathfinder/audit/*.jsonl` | Timestamps, step results, HMAC signatures | Tamper-evident log of what happened |
-| Agent config | `~/.agentpathfinder/config.json` | Agent name, shared secret for HMAC (if configured) | Authenticate which agent performed which step |
+| Agent config | `~/.agentpathfinder/agents/registry.json` | Agent name, shared secret for HMAC (if configured) | Authenticate which agent performed which step |
 
 **No user data, credentials, source code, or external data is ever read, transmitted, or stored.**
 
@@ -78,7 +78,7 @@ signature = hmac_sha256(audit_key, event_bytes)
 
 ## Why Security Scanners May Flag This Code
 
-Automated security scanners (including ClawHub's) may flag this code because it contains patterns commonly associated with malware:
+Automated security scanners may flag this code because it contains patterns commonly associated with malware:
 
 | Pattern | Why Scanners Flag It | Why It's Safe Here |
 |---------|---------------------|-------------------|
@@ -171,7 +171,6 @@ Found a security issue? Contact us before going public.
 - **Email:** security@certainlogic.ai *(preferred)*
 - **GitHub:** Open a private security advisory at `github.com/CertainLogicAI/agentpathfinder/security/advisories`
 - **Response time:** Within 48 hours
-- **Bounty:** Recognition + free Pro tier (details on request)
 
 ---
 
@@ -182,15 +181,6 @@ Found a security issue? Contact us before going public.
 | GDPR | ✅ Compliant | No PII collected, no data leaves machine |
 | CCPA | ✅ Compliant | No personal data processing |
 | SOC 2 | ⚠️ N/A (free tier) | Type II available for Enterprise |
-| HIPAA | ⚠️ Not certified | Use in healthcare requires Enterprise TEE |
-| FedRAMP | ❌ Not available | Not applicable to free/Pro tiers |
-
----
-
-## Changelog
-
-- **2026-04-25 v1.0.5** — Initial safety disclosure, ClawHub scanner transparency
-- **2026-04-25 v1.0.4** — First public release
 
 ---
 

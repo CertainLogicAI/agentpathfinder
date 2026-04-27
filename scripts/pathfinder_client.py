@@ -33,7 +33,7 @@ sys.path.insert(0, str(_SCRIPT_DIR))
 from visual import (
     fmt_status, fmt_audit_event, fmt_step_complete, fmt_step_failed,
     fmt_task_complete, fmt_task_failed, fmt_reconstruct_ok, fmt_reconstruct_fail,
-    fmt_agent_registered, fmt_dashboard_url, fmt_brain_stats, fmt_install_ready,
+    fmt_agent_registered, fmt_dashboard_url, fmt_install_ready,
     fmt_crash_recovery, PASS, FAIL, SPINNER, INFO, badge_ok, badge_fail,
     green, red, yellow, bold, dim,
 )
@@ -95,28 +95,14 @@ class PathfinderClient:
     def verify_agent(self, agent_id: str, api_key: str) -> bool:
         return self.engine.verify_agent(agent_id, api_key)
 
-    # ── Brain Stats ───────────────────────────────────────────────
+    # ── Dashboard ────────────────────────────────────────────────
 
-    def brain_stats(self) -> Optional[Dict[str, Any]]:
-        """Load Brain API metrics from metrics.json if available."""
-        metrics_path = self.data_dir.parent / "metrics.json"
-        if not metrics_path.exists():
-            # Try alternate locations
-            for alt in [
-                Path("./metrics.json"),
-                Path("../metrics.json"),
-                self.data_dir / "metrics.json",
-            ]:
-                if alt.exists():
-                    metrics_path = alt
-                    break
-            else:
-                return None
-        try:
-            with open(metrics_path) as f:
-                return json.load(f)
-        except Exception:
-            return None
+    def dashboard(self) -> None:
+        """Generate static dashboard HTML."""
+        dashboard_script = Path(__file__).parent / "dashboard_static.py"
+        if not dashboard_script.exists():
+            raise FileNotFoundError(f"Dashboard script not found: {dashboard_script}")
+        subprocess.run([sys.executable, str(dashboard_script)], check=True)
 
 
 # ── CLI Handlers with Visual Confirmations ────────────────────────
@@ -206,17 +192,26 @@ def cli_register_agent(args):
 
 
 def cli_dashboard(args):
-    """Start the web dashboard."""
-    dashboard_script = Path(__file__).parent / "dashboard.py"
+    """Generate the static HTML dashboard."""
+    dashboard_script = Path(__file__).parent / "dashboard_static.py"
     if not dashboard_script.exists():
-        print(f"{FAIL} Dashboard server not found: {dashboard_script}")
+        print(f"{FAIL} Dashboard generator not found: {dashboard_script}")
         sys.exit(1)
-    port = args.port if hasattr(args, "port") else DASHBOARD_PORT
-    print(f"{SPINNER} Starting dashboard on port {port}...")
+    print(f"{SPINNER} Generating dashboard...")
     try:
-        subprocess.run([sys.executable, str(dashboard_script), "--port", str(port)], check=True)
-    except KeyboardInterrupt:
-        print(f"\n{INFO} Dashboard stopped.")
+        result = subprocess.run(
+            [sys.executable, str(dashboard_script)],
+            capture_output=True, text=True, check=True
+        )
+        # Parse output for file path
+        for line in result.stdout.split('\n'):
+            if 'Dashboard written to:' in line:
+                print(f"{PASS} {line}")
+                break
+        else:
+            print(result.stdout)
+    except subprocess.CalledProcessError as e:
+        print(f"{FAIL} Dashboard generation failed: {e.stderr}")
     except Exception as e:
         print(f"{FAIL} Dashboard failed: {e}")
 
@@ -229,11 +224,6 @@ def cli_install(args):
     (DATA_DIR / "audit").mkdir(exist_ok=True)
     (DATA_DIR / "agents").mkdir(exist_ok=True)
     print(fmt_install_ready())
-    # Try to show brain stats if available
-    client = PathfinderClient()
-    stats = client.brain_stats()
-    if stats:
-        print(fmt_brain_stats(stats))
 
 
 def main():
@@ -274,9 +264,7 @@ def main():
     p_agent.set_defaults(func=cli_register_agent)
 
     # dashboard
-    p_dash = sub.add_parser("dashboard", help="Start web dashboard")
-    p_dash.add_argument("--port", "-p", type=int, default=DASHBOARD_PORT, help="Port (default 8080)")
-    p_dash.add_argument("--start", action="store_true", default=True, help="Start the server")
+    p_dash = sub.add_parser("dashboard", help="Generate static HTML dashboard")
     p_dash.set_defaults(func=cli_dashboard)
 
     # install / setup

@@ -1,14 +1,12 @@
 ---
-summary: "Tamper-evident cryptographic tracking for AI agent siblings"
+summary: "Tamper-evident cryptographic tracking for AI agent tasks"
 read_when: ["installing", "configuring", "troubleshooting"]
 name: AgentPathfinder
-description: "Unlimited tamper-evident cryptographic task tracking for AI agents. Green = proven complete. Red = failed or incomplete. Free forever — upgrade for dashboard, multi-agent views, and full audit exports.  
-
-Security: Open-source, no network access, no data collection. See SAFETY.md for full disclosure."
-version: 1.0.6
+description: "Unlimited tamper-evident cryptographic task tracking for AI agents. Green = proven complete. Red = failed or incomplete. Free forever — no usage caps, no telemetry. Data stays in ~/.agentpathfinder only. See SAFETY.md for full disclosure."
+version: 1.2.7
 author: CertainLogic
 license: MIT
-platforms: [linux, macos]  # Windows: no advisory locking (fcntl), but code runs with graceful degradation
+platforms: [linux, macos]
 ---
 
 # AgentPathfinder
@@ -21,15 +19,17 @@ AgentPathfinder gives your AI agents cryptographic proof of task completion. Dec
 
 ## What You Get
 
-| Free (Now) | Pro (Coming Soon) |
-|------|-------------|
-| ✅ Unlimited tamper-evident tracking via green/red in messages | 🖥️ Beautiful dead-simple dashboard |
-| ✅ Cryptographic sharding (XOR-based, 256-bit) | 📊 Multi-agent sibling tracking |
-| ✅ Audit trail with HMAC verification | 📋 Full audit exports (CSV/JSON) |
-| ✅ Crash recovery + atomic writes | 🔗 Webhook notifications |
-| ✅ CLI with visual confirmations | 📧 Priority support |
+| Feature | How It Works |
+|---------|-------------|
+| ✅ Unlimited tamper-evident tracking | Green/red in every message |
+| ✅ Cryptographic sharding | 256-bit master key → N+1 shards via XOR |
+| ✅ Audit trail | HMAC-SHA256 signed, append-only JSONL |
+| ✅ Crash recovery | Atomic writes + fsync + rename |
+| ✅ CLI with visual confirmations | `pf status` shows ✅/❌/⏳ at a glance |
 
-**Enterprise:** On-prem deployment, SSO/SAML, exportable tamper-proof audit files for compliance.
+**Pro (coming soon):** Dashboard, multi-agent tracking, audit exports, webhooks.
+
+**Enterprise:** On-prem, SSO/SAML, hosted vault for compliance.
 
 ## Install
 
@@ -132,7 +132,7 @@ runtime.retry_step(tid, 2, build_docker)
 
 **Tamper-evident, not tamper-proof.** Every event is HMAC-SHA256 signed with a derived audit key. If someone modifies the audit trail or task files, verification fails and you know immediately.
 
-**Current limitations:** A malicious agent with filesystem access could read vault shards and reconstruct the key. For full isolation, upgrade to Pro (hosted vault) or Enterprise (TEE/remote attestation).
+**Current limitations:** A malicious agent with filesystem access to `~/.agentpathfinder/vault/` could read shards and reconstruct the key. For full isolation, upgrade to Pro (hosted vault) or Enterprise (TEE/remote attestation).
 
 | Feature | How It Works |
 |---------|-------------|
@@ -142,6 +142,17 @@ runtime.retry_step(tid, 2, build_docker)
 | Concurrency control | Advisory file locks per task |
 | Audit integrity | HMAC-SHA256 chain, any edit breaks verification |
 | Agent authentication | Shared-secret HMAC tokens per agent |
+
+## Data Storage
+
+**All data stays in `~/.agentpathfinder/` only.** No external servers, no telemetry, no analytics.
+
+| What | Where | Content |
+|------|-------|---------|
+| Task metadata | `~/.agentpathfinder/tasks/*.json` | Task name, steps, status |
+| Vault shards | `~/.agentpathfinder/vault/*.shard` | 32-byte shards per step |
+| Audit trail | `~/.agentpathfinder/audit/*.jsonl` | HMAC-signed events |
+| Agent config | `~/.agentpathfinder/agents/registry.json` | Agent IDs, shared secrets |
 
 ## CLI Reference
 
@@ -154,7 +165,7 @@ runtime.retry_step(tid, 2, build_docker)
 | `pf audit <task_id>` | Show tamper-verified audit trail |
 | `pf reconstruct <task_id>` | Reconstruct master key (all steps required) |
 | `pf register-agent <id>` | Register an agent for authenticated execution |
-| `pf dashboard` | Start web dashboard (requires Flask) |
+| `pf dashboard` | Generate static HTML dashboard |
 
 ## Dashboard
 
@@ -163,15 +174,15 @@ runtime.retry_step(tid, 2, build_docker)
 python3 scripts/dashboard_static.py --output report.html
 # Open report.html in your browser
 
-# Or start live dashboard
+# Or start live dashboard (requires Flask)
 pf dashboard --port 8080
 # Open http://localhost:8080
 ```
 
 The dashboard shows:
-- **Tasks tab:** Live status, progress bars, step icons, audit badges
-- **Brain Stats tab:** Token savings, cache hit rate, $ saved, hallucinations caught
-- **CSV export:** One-click report download
+- **Tasks tab:** Live status, progress bars, step icons
+- **Audit tab:** Recent events with timestamps
+- **Data storage:** Confirms everything is local in `~/.agentpathfinder/`
 
 ## Troubleshooting
 

@@ -1,4 +1,4 @@
-# AgentPathfinder Skill — Beta Package Summary
+# AgentPathfinder — Beta Package Summary
 
 **Status:** 29/29 tests pass ✅ | Skill packaged ✅ | Visual confirmations ✅ | Dashboard ready ✅
 
@@ -12,18 +12,19 @@
 - **Concurrency control** — advisory file locking per task
 - **Atomic writes** — temp+fsync+rename, no partial writes
 - **Agent authentication** — shared-secret HMAC tokens
-- **29/29 tests pass** — full coverage Phases 0-5
+- **29/29 tests pass** — full coverage
 
 ### New for Beta
 1. **Visual confirmations** — one-glance status via emoji + ANSI formatting:
    - ✅ Step complete, ❌ Step failed, ⏳ Running, ○ Pending
    - ✅ Task done, ❌ Task failed, 🚨 Audit tampered, 🔒 Audit verified
 
-2. **Unified dashboard** (zero deps — Python stdlib HTTP server):
-   - Tasks panel: live status, progress bars, step icons, audit badges
-   - Brain Stats panel: cache hit rate, tokens saved, $ saved, hallucinations caught
-   - JSON exports: `/api/tasks`, `/api/brain`, `/api/health`
-   - Command: `pf dashboard --start --port 8080`
+2. **Dashboard** (zero deps — Python stdlib HTTP server):
+   - Tasks panel: live status, progress bars, step icons
+   - Audit tab: recent events with timestamps
+   - Data storage: confirms everything is local in `~/.agentpathfinder/`
+   - JSON exports: `/api/tasks`, `/api/health`
+   - Command: `pf dashboard`
 
 3. **One-command install**: `pf install` → creates dirs, shows ready banner
 
@@ -33,12 +34,22 @@
 skills-publish/agentpathfinder/
 ├── SKILL.md                # Full docs (install, usage, arch, troubleshooting)
 ├── README.md               # Quickstart
-├── skill.json              # ClawHub metadata (name: agentpathfinder, v1.0.0-beta1)
-└── scripts/
-    ├── __init__.py
-    ├── pathfinder_client.py  # CLI + SDK (create/run/status/audit/reconstruct/register-agent/dashboard/install)
-    ├── dashboard_server.py   # Unified web dashboard — stdlib HTTP, zero deps
-    └── visual.py             # Emoji + ANSI formatting constants/macros
+├── SAFETY.md               # Security disclosure
+├── PRO-WAITLIST.md         # Pro features and pricing
+├── skill.json              # ClawHub metadata
+├── agentpathfinder/        # Core modules
+│   ├── __init__.py
+│   ├── pathfinder_core.py
+│   ├── task_engine.py
+│   ├── audit_trail.py
+│   ├── issuing_layer.py
+│   └── agent_runtime.py
+├── scripts/
+│   ├── pathfinder_client.py  # CLI + SDK
+│   ├── dashboard_static.py   # Static HTML report generator
+│   └── visual.py             # Emoji + ANSI formatting
+├── requirements.txt
+└── setup.py
 ```
 
 ## Quick Usage
@@ -50,8 +61,13 @@ pf install
 # Create a task
 pf create "deploy" build push verify
 
-# Run it
+# Run it (simulation mode — marks all steps complete for demo)
 pf run <task_id>
+# → ⏳ SIMULATION MODE — No real code executed.
+#    ✅ deploy is complete! Progress: 3/3
+#    ✅ Step 1 complete: build (token: tok_abc123...)
+#    ✅ Step 2 complete: push (token: tok_def456...)
+#    ✅ Step 3 complete: verify (token: tok_ghi789...)
 
 # Visual status
 pf status <task_id>
@@ -60,9 +76,9 @@ pf status <task_id>
 #    ✅ Step 2: push | token: tok_def456…
 #    ✅ Step 3: verify | token: tok_ghi789…
 
-# Start dashboard
-pf dashboard --start
-# → 🌐 http://localhost:8080
+# Generate dashboard
+pf dashboard
+# → Opens report.html in your browser
 ```
 
 ## SDK
@@ -86,18 +102,29 @@ print(pf.status(tid))
 | No rate limiting on agent auth | Potential DoS | Add per-agent rate window |
 | No webhook notifications | Users must poll | Add webhook on step/task state change |
 
+## Data Storage
+
+**All data stays in `~/.agentpathfinder/` only.** No external servers, no telemetry, no analytics.
+
+| What | Where | Content |
+|------|-------|---------|
+| Task metadata | `~/.agentpathfinder/tasks/*.json` | Task name, steps, status |
+| Vault shards | `~/.agentpathfinder/vault/*.shard` | 32-byte shards per step |
+| Audit trail | `~/.agentpathfinder/audit/*.jsonl` | HMAC-signed events |
+| Agent config | `~/.agentpathfinder/agents/registry.json` | Agent IDs, shared secrets |
+
 ## Beta Go/No-Go
 
 **Recommendation: GO for beta.**
 
 Core is battle-tested (29 tests pass, 6 P1 security issues all resolved). Skill package gives:
-- Visual status at a glance (your requirement ✅)
-- Dashboard for tasks + brain stats (your requirement ✅)
-- < 5 min install (your requirement ✅)
+- Visual status at a glance ✅
+- Dashboard showing tasks and audit events ✅
+- < 5 min install ✅
+- Zero external dependencies ✅
 
 ## Next Steps
 
 1. **Publish to ClawHub**
 2. **Beta invite** — get 3-5 users to hammer it
-3. **Hermes automation** — integration layer so Hermes can call Pathfinder autonomously
-4. **Premium tier** — remote vault + webhook
+3. **Premium tier** — remote vault + webhook + multi-agent

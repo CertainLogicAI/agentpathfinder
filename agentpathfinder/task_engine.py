@@ -44,7 +44,9 @@ class TaskState(Enum):
 class TaskEngine:
     """Manages task lifecycle: creation, execution, state transitions."""
 
-    def __init__(self, data_dir: Path = Path("./pathfinder_data")):
+    def __init__(self, data_dir: Optional[Path] = None):
+        if data_dir is None:
+            data_dir = Path.home() / ".agentpathfinder" / "pathfinder_data"
         self.data_dir = Path(data_dir)
         self.tasks_dir = self.data_dir / "tasks"
         self.vault_dir = self.data_dir / "vault"

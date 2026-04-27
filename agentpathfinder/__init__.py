@@ -1,4 +1,4 @@
-"""AgentPathfinder v2 core modules."""
+"""AgentPathfinder core modules."""
 from .pathfinder_core import (
     generate_master_key, split_key, reconstruct_key,
     hmac_sign, verify_hmac, hash_key, derive_key, shard_to_hex, shard_from_hex
