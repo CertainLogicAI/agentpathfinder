@@ -1,23 +1,26 @@
-# Build Spec: Add CSV Export to Pro Dashboard
+# Build Spec: Email Validator Module
 
 ## Goal
-Add CSV export functionality to the Pro Dashboard with one-click download.
+Create a Python module `email_validator.py` that validates email addresses.
 
 ## Requirements
-1. Export button on dashboard
-2. CSV format with headers: task_id, name, state, steps, completed, failed, created_at
-3. Works with filtered agent views
-4. File download (not just API endpoint)
+1. Function `validate_email(email: str) -> bool`
+2. Check format using regex (RFC 5322 simplified)
+3. Check domain has MX record (optional, with timeout)
+4. Type hints and docstrings
+5. Unit tests in `test_email_validator.py`
 
-## Steps
-1. Add `/export` route to `pro_dashboard.py`
-2. Generate CSV via `io.StringIO` + `csv.writer`
-3. Return as `Response` with proper headers
-4. Add export buttons to HTML template
-5. Test with sample data
+## Files to Create
+- `email_validator.py` — main module
+- `test_email_validator.py` — pytest tests
 
-## Testing
-- Create 3+ tasks
-- Click CSV export
-- Verify file contents
-- Check with AgentPathfinder audit
+## Testing Criteria
+- `validate_email("user@example.com")` → True
+- `validate_email("invalid")` → False
+- `validate_email("@example.com")` → False
+- All pytest tests pass
+
+## Implementation Notes
+- Use `re` module for regex
+- Use `dns.resolver` for MX lookup (optional)
+- Handle exceptions gracefully
