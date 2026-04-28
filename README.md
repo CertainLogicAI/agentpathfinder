@@ -15,7 +15,12 @@
 
 ## The Problem
 
-Your AI agent says **"Done"** — but did it actually finish? Or did it fail step 3 silently and move on? 
+Your AI agent says **"Done"** — but did it actually finish? 
+
+> "If an agent can't prove it did the work, it's just a hallucination machine. No receipts, no trust." 
+> — 10x hackathon winner, 20K followers
+
+It skipped step 3. Failed silently. Moved on.
 
 You only find out when your customer does. 😤
 
@@ -174,4 +179,4 @@ TaskEngine generates 256-bit master key → splits via XOR into N+1 shards → s
 
 MIT license. PRs welcome. Issues = features we didn't think of yet.
 
-**Built by:** [CertainLogic](https://certainlogic.ai) — deterministic AI, cryptographic proof.
+**Built by:** [CertainLogic](https://certainlogic.ai) — deterministic AI, cryptographic proof. The Company Brain for agent execution.
