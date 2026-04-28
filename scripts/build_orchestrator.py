@@ -330,8 +330,8 @@ def test_valid_with_dots():
 
         # Copy entire package to build dir for relative imports
         pkg_src = mod.parent
-        if mod.name == "task_engine.py":
-            # task_engine is in agentpathfinder/ package
+        if pkg_src.name == "agentpathfinder":
+            # Module is in agentpathfinder/ package — copy whole package
             pkg_dst = self.output_dir / "agentpathfinder"
             if not pkg_dst.exists():
                 import shutil
@@ -386,7 +386,7 @@ def test_valid_with_dots():
                     class_methods[node.name] = [n.name for n in node.body
                                             if isinstance(n, ast.FunctionDef) and not n.name.startswith("_")]
         # Determine import path
-        if (self.output_dir / "agentpathfinder").exists():
+        if (self.output_dir / "agentpathfinder").exists() or str(mod.parent.name) == "agentpathfinder":
             import_path = f"agentpathfinder.{mod.stem}"
         else:
             import_path = mod.stem
