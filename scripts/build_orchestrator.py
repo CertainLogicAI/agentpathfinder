@@ -326,6 +326,17 @@ def test_valid_with_dots():
             print(f"   {FAIL} Module not found")
             return False
 
+        # Copy entire package to build dir for relative imports
+        pkg_src = mod.parent
+        if mod.name == "task_engine.py":
+            # task_engine is in agentpathfinder/ package
+            pkg_dst = self.output_dir / "agentpathfinder"
+            if not pkg_dst.exists():
+                import shutil
+                shutil.copytree(pkg_src, pkg_dst)
+                print(f"   {PASS} Copied package -> {pkg_dst}")
+            mod = pkg_dst / mod.name
+
         print(f"   {SPIN} Auto-improving {mod.name}...")
         source = mod.read_text()
         tree  = ast.parse(source)

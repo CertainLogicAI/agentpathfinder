@@ -30,6 +30,7 @@ import json
 import subprocess
 import sys
 import time
+import re
 import hashlib
 from pathlib import Path
 from typing import Dict, List, Any, Optional
@@ -311,41 +312,31 @@ class AutoBuildAgent:
             print(f"\n{WARN} Dry run — stopping before build")
             return True
         
-        # ── Phase 3: BUILD ──
+        # ── Phase 3: BUILD via general orchestrator ──
         print(f"\n{SPIN} Phase 3: Running build orchestrator...")
         build_output = self.build_data_dir / f"build_{p_name}"
         build_output.mkdir(exist_ok=True)
         
-        sys.path.insert(0, str(_SCRIPT_DIR))
-        from build_orchestrator import BuildOrchestrator
+        # Call the general build_orchestrator.py as subprocess
+        cmd = [
+            sys.executable,
+            str(_SCRIPT_DIR / "build_orchestrator.py"),
+            "--spec", str(spec_path),
+            "--output-dir", str(build_output),
+            "--data-dir", str(self.build_data_dir / "pathfinder_data")
+        ]
+        print(f"   Running: {Path(cmd[1]).name} {' '.join(cmd[2:])}")
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        print(result.stdout)
+        if result.returncode != 0:
+            print(f"   {FAIL} Build orchestrator failed")
+            print(result.stderr[:500])
+            return False
         
-        orch = BuildOrchestrator(data_dir=self.build_data_dir / "pathfinder_data")
-        task_id = orch.start(str(spec_path), str(build_output))
-        
-        # Track through steps
-        orch.run_step(1, ["echo", f"Spec loaded: {len(spec_text)} chars"])
-        orch.run_step(2, ["mkdir", "-p", str(build_output)])
-        
-        # Apply automated fixes
-        print(f"   {SPIN} Applying automated fixes...")
-        improved = self._apply_quick_fixes(module_path.read_text(), analysis)
-        improved_path = build_output / module_path.name
-        improved_path.write_text(improved)
-        print(f"   {PASS} Applied fixes to {improved_path}")
-        
-        orch.issuing.issue_step_token(
-            task_id, 3, "auto_improvements_applied",
-            hash_key(improved.encode())[:16]
-        )
-        
-        # Check for tests
-        test_file = module_path.parent.parent / "tests" / f"test_{module_path.name}"
-        if test_file.exists():
-            orch.run_step(4, [sys.executable, "-m", "pytest", str(test_file), "-v"])
-        else:
-            orch.run_step(4, ["echo", "No tests to run — test file missing"])
-        
-        orch.run_step(5, ["python3", "-m", "py_compile", str(improved_path)])
+        # Extract task_id from output (look for "Build started: ...")
+        task_id_match = re.search(r"Build started: +([a-f0-9\-]+)", result.stdout)
+        task_id = task_id_match.group(1) if task_id_match else "unknown"
+        print(f"   {PASS} Build complete — Task: {task_id}")
         
         # ── Phase 4: GIT STAGE ──
         print(f"\n{SPIN} Phase 4: Staging changes...")
