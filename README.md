@@ -1,10 +1,10 @@
 # AgentPathfinder
 
-**Green = proven. Red = not. No more trusting "Done" from AI agents. 🟢🔴**
+**Green = agent said done. Red = agent said failed. Know what your agent actually claimed.** ✅❌
 
 <p align="center">
   <a href="https://clawhub.ai/certainlogicai/agentpathfinder-agent-task-tracker-free">
-    <img src="https://img.shields.io/badge/ClawHub-v1.2.2-blue?logo=package" alt="ClawHub">
+    <img src="https://img.shields.io/badge/ClawHub-v1.2.8-blue?logo=package" alt="ClawHub">
   </a>
   <a href="https://github.com/CertainLogicAI/agentpathfinder">
     <img src="https://img.shields.io/github/stars/CertainLogicAI/agentpathfinder?style=social" alt="Stars">
@@ -13,18 +13,26 @@
 
 ---
 
+## What This Is
+
+A **receipt system for AI agents.** It records who claimed what and when, with proof that the record wasn't tampered with. 
+
+Like a security camera — it doesn't stop theft, but it shows you who was there. AgentPathfinder doesn't stop agents from making mistakes, but it proves what they claimed with a signature you can verify.
+
+---
+
 ## The Problem
 
-Your AI agent says **"Done"** — but did it actually finish? 
+Your AI agent says **"Done"** — but did it actually finish?
 
-> "If an agent can't prove it did the work, it's just a hallucination machine. No receipts, no trust." 
-> — 10x hackathon winner, 20K followers
+> "If an agent can't show you what it claimed, you're just trusting a hallucination machine. No receipts, no trust." 
+> — [@alexabelonix](https://x.com/alexabelonix), 10x hackathon winner, 20K followers
 
 It skipped step 3. Failed silently. Moved on.
 
 You only find out when your customer does. 😤
 
-**AgentPathfinder** gives you cryptographic proof of every step. Green = cryptographically verified complete. Red = failed or not run. No surprises.
+**AgentPathfinder** gives you a signed record of every step. Green = agent signed claim of completion. Red = agent signed failure. You see what was claimed, not just what was said.
 
 ---
 
@@ -34,53 +42,60 @@ You only find out when your customer does. 😤
 # 1. Install
 clawhub install agentpathfinder
 
-# 2. Create a tamper-evident task
+# 2. Create a signed task
 pf create deploy "test → build → push → restart"
 # → Task created: deploy-a7f3d2e1
 
-# 3. Run it (you see every step)
+# 3. Run it (you see every claim)
 pf run deploy-a7f3d2e1
-# → ✅ test passed
-# → ✅ build complete  
-# → ✅ push complete
-# → ✅ restart complete
-# → ✅ deploy-a7f3d2e1 DONE — all 4 steps verified
+# → ✅ test: agent claimed passed
+# → ✅ build: agent claimed complete  
+# → ✅ push: agent claimed complete
+# → ✅ restart: agent claimed complete
+# → ✅ deploy-a7f3d2e1 DONE — all 4 steps recorded
+
+# 4. Check signing integrity
+pf audit deploy-a7f3d2e1
+# → ✅ All 6 events signed — integrity intact
+# → ⚠️ Note: This shows WHO claimed WHAT. Not whether the claim is true.
 ```
 
-**That's it.** Every step was cryptographically signed. If anyone tampers with the results, `pf audit` catches it instantly.
+Every step is signed by the agent. If someone edits the results file without permission, `pf audit` detects the change.
+
+---
+
+## What This Does vs. What It Doesn't
+
+| What It **Does** | What It **Does NOT** |
+|------------------|----------------------|
+| ✅ Records what your agent claimed (like a receipt) | ❌ Check if the agent actually did the work |
+| ✅ Signs each claim so you know who said it | ❌ Prove the claim is true |
+| ✅ Detects if someone edited the records | ❌ Stop agents from lying |
+| ✅ Lets you resume if your agent gets interrupted | ❌ Run or test the work itself |
+| ✅ Tells you which agent claimed what when | ❌ Replace human review |
 
 ---
 
 ## What You Get (Free Forever)
 
-| Feature | Details |
-|---------|---------|
-| ✅ **Unlimited tasks** | No usage caps. Ever. |
-| 🔒 **Cryptographic proof** | Every step HMAC-signed with derived audit key |
-| 🧠 **Brain-first queries** | Checks local facts DB before burning LLM tokens |
-| 🛡️ **Hallucination guard** | Auto-validates outputs against known facts |
-| 📋 **Tamper-evident audit** | Any edit to results breaks verification |
-| 🔄 **Crash recovery** | Interrupted tasks resume safely |
-| 🖥️ **Dashboard** (static) | Zero-dependency HTML report |
+| Feature | What It Means |
+|---------|-------------|
+| ✅ **Unlimited tasks** | Make as many task checklists as you want. No caps. |
+| 🔒 **Proof of who said what** | Every step is signed. You know which agent claimed what, and when. |
+| 📋 **Tamper-proof records** | If someone edits the task history without permission, you'll know. The signature breaks. |
+| 🔄 **Resume where you left off** | If your agent gets interrupted (power loss, killed, timed out), see exactly which step it was on. Retry from there instead of starting over. |
+| 🖥️ **Dashboard** (static) | One-page HTML report of all your tasks. No server needed. |
+| 🧠 **Optional Brain integration** | Pull facts from your knowledge base if you have one set up. |
 
 ---
 
 ## Why Free Forever?
-
-We sell ** peace of mind**, not seat licenses.
 
 - Free = CLI + local vault + unlimited use
 - Pro = Dashboard + multi-agent views + team syncing + webhooks
 - Enterprise = On-prem, SSO, compliance exports
 
 **Install costs $0. Upgrade when you're ready.**
-
----
-
-## The Story
-
-> *"I got tired of my agents saying 'Done' only to find out they failed halfway through and didn't tell me. Built a tracker that proves every step. Now I sleep better."*
-> — Anton, @CertainLogicAI
 
 ---
 
@@ -94,7 +109,7 @@ clawhub install agentpathfinder
 pip install git+https://github.com/CertainLogicAI/agentpathfinder.git
 
 # Or clone and run
- git clone https://github.com/CertainLogicAI/agentpathfinder.git
+git clone https://github.com/CertainLogicAI/agentpathfinder.git
 cd agentpathfinder && python3 -m agentpathfinder
 ```
 
@@ -106,15 +121,16 @@ pf create deploy_api "run_tests" "build_image" "push_registry" "restart_service"
 
 # Check status (emoji indicators)
 pf status deploy_api
-# → ✅ deploy_api 4/4 complete
+# → ✅ deploy_api 4/4 complete — agent reported all steps done
 
-# Tamper check
+# Check signing integrity (NOT truth verification)
 pf audit deploy_api
-# → ✅ All 6 events cryptographically verified
+# → ✅ All 6 events signed — integrity intact
+# → ⚠️ Signing integrity means: no unauthorized edits. Not: claims are true.
 
-# Reconstruct master key (all steps must pass)
+# Reconstruct master key (requires all steps to have been claimed complete)
 pf reconstruct deploy_api
-# → ✅ Key reconstructed
+# → ✅ Key reconstructed — all reported claims present
 ```
 
 ---
@@ -122,33 +138,38 @@ pf reconstruct deploy_api
 ## Advanced: Python SDK
 
 ```python
-from agentpathfinder import PathfinderClient, AgentRuntime
+from agentpathfinder import TaskEngine, AgentRuntime, IssuingLayer, AuditTrail
 
-pf = PathfinderClient()
-tid = pf.create("deploy", ["test", "build", "push"])
+# Create a task engine (stores tasks locally in ~/.agentpathfinder)
+engine = TaskEngine()
+task_id = engine.create_task("deploy", [{"name": "test"}, {"name": "build"}, {"name": "push"}])
 
-# Bind real functions
-runtime = AgentRuntime(pf.engine, pf.issuing)
-runtime.execute_task(tid, {
-    "test": lambda: pytest.main(["-v"]),
-    "build": lambda: docker.build("."),
-    "push": lambda: docker.push("app"),
+# Set up the signing layer
+issuer = IssuingLayer(engine)
+
+# Create runtime to execute steps
+runtime = AgentRuntime(engine, issuer)
+
+# Run the task with your own functions
+runtime.execute_task(task_id, {
+    "test": lambda: your_test_function(),   # YOU must verify this ran
+    "build": lambda: your_build_function(), # YOU must verify output
+    "push": lambda: your_push_function(),   # YOU must verify registry
 })
-
-# If a step fails, retry after fixing
-runtime.retry_step(tid, 2, docker.build)
 ```
+
+**The SDK executes the functions YOU provide.** AgentPathfinder records that the function was called and what it returned. It does NOT independently verify that the function actually did what it claimed.
 
 ---
 
 ## Waitlist: Pro Dashboard
 
-The Pro dashboard is shipping soon. Features:
+**Note:** Pro dashboard adds convenience views. It does NOT add automatic verification of whether agent claims are true.
 
-- 🖥️ **Live multi-agent view** — see all your agents' tasks in one place
-- 📊 **Team workspace** — share tasks, assign agents, track progress
-- 🔗 **Webhook notifications** — Slack, Discord, email alerts
-- 📈 **Metrics & trends** — task completion rates, audit history, team activity
+- 🖥️ **Live multi-agent view** — see what agents claimed in one place
+- 📊 **Team workspace** — share tasks, assign agents, track reported progress
+- 🔗 **Webhook notifications** — alert when steps are reported complete
+- 📈 **Metrics & trends** — report completion rates, audit history
 - 🌐 **Hosted vault** — no local filesystem worries
 
 **Join the waitlist:** Star this repo and DM [@CertainLogicAI](https://x.com/CertainLogicAI) with "pro".
@@ -157,21 +178,28 @@ The Pro dashboard is shipping soon. Features:
 
 ## Security
 
-| Threat | Protection |
-|--------|-----------|
-| Tampered results | HMAC-SHA256 audit chain — any edit breaks verification |
-| Crash mid-task | Atomic writes + crash recovery |
-| Concurrent access | Advisory file locks per task |
-| Unauthorized agents | 256-bit API keys + HMAC-signed requests |
-| Local vault breach | Upgrade to Pro for hosted vault (no filesystem access) |
+| Threat | What It Does | Limitation |
+|--------|-------------|------------|
+| Someone edited the task records | Signatures catch unauthorized changes | ✅ Works |
+| Agent lies about doing the work | Signs the lie anyway (not a lie detector) | ❌ Does NOT detect false claims |
+| Your agent stopped mid-task | You can see which step it was on and retry | ✅ Works |
+| Multiple agents working at once | One task at a time per agent (prevents mix-ups) | ✅ Works |
+| Wrong agent tries to record tasks | API keys check who's allowed | ✅ Works |
+| **Agent snoops on your system** | Signs whatever it finds (can't tell it's forged) | ❌ **Not detected — see below** |
+| Local vault breach (unauthorized user) | Upgrade to Pro for encrypted hosted vault | ⚠️ Adds encryption, not complete protection |
 
-See [SAFETY.md](SAFETY.md) for full disclosure.
+⚠️ **Honest limitation:** If an AI agent has full access to your system, it could theoretically find the signing key and create fake records that look valid. The records would pass our automated checks. **Only human review of the actual work catches this.** This is why the free tier is for personal use — upgrade to Pro or Enterprise if you need stronger protection.
 
 ---
 
-## Architecture (50 words)
+## How It Works (Simple)
 
-TaskEngine generates 256-bit master key → splits via XOR into N+1 shards → stores shards in vault, metadata in task JSON → AgentRuntime executes steps, gets HMAC-signed tokens → AuditTrail logs everything → reconstruction only when all steps pass.
+1. You create a task ("deploy website" with steps: test → build → push)
+2. Your agent runs each step, recording what it claims happened
+3. Every claim is signed — shows who claimed it, when, and what they claimed
+4. You check the audit log to see what was claimed (not whether it's true)
+
+**No server needed.** Everything stays on your machine.
 
 ---
 
@@ -179,4 +207,4 @@ TaskEngine generates 256-bit master key → splits via XOR into N+1 shards → s
 
 MIT license. PRs welcome. Issues = features we didn't think of yet.
 
-**Built by:** [CertainLogic](https://certainlogic.ai) — deterministic AI, cryptographic proof. The Company Brain for agent execution.
+**Built by:** [CertainLogic](https://certainlogic.ai) — honest tools for honest builders.

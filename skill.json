@@ -2,8 +2,8 @@
   "schemaVersion": "2024-v2",
   "id": "certainlogicai.agentpathfinder",
   "displayName": "AgentPathfinder",
-  "version": "1.2.7",
-  "description": "Tamper-evident cryptographic task tracking for AI agents. Local-first: all data stays in ~/.agentpathfinder. No telemetry, no external servers, no usage caps.",
+  "version": "1.2.8",
+  "description": "Signed, tamper-evident task tracking for AI agents. Records what agents claim (with cryptographic signatures). Does NOT independently verify that claims are true. Local-first: all data stays in ~/.agentpathfinder. No telemetry, no external servers, no usage caps.",
   "repository": "https://github.com/CertainLogicAI/agentpathfinder",
   "entrypoints": {
     "cli": {
@@ -24,7 +24,8 @@
     "trust",
     "tamper-evident",
     "cryptography",
-    "task-tracking"
+    "task-tracking",
+    "accountability"
   ],
   "license": "MIT",
   "author": {

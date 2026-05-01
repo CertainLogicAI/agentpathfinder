@@ -14,7 +14,7 @@ This system analyzes your Python modules, generates improvement specs, applies f
 | Build Orchestrator | `scripts/build_orchestrator.py` | Tracks builds via Pathfinder. Cryptographic verification. |
 | Spec Generator | `scripts/spec_generator.py` | Generates business-aligned specs from GBrain data. |
 | Knowledge Injector | `scripts/inject_knowledge.py` | Adds facts to GBrain (products, customers, etc.). |
-| GBrain Client | `scripts/gbrain_client.py` | Query and manage GBrain facts. |
+| Brain API Client | `scripts/brain_api_client.py` | Query and manage Brain API facts. |
 
 ## Quick Start
 
@@ -82,7 +82,7 @@ Types: `auth` | `integration` | `ui` | `api` | `security` | `performance`
 ### Query product knowledge:
 ```bash
 # Using GBrain client
-python3 scripts/gbrain_client.py query "AgentPathfinder pricing"
+python3 scripts/brain_api_client.py query "AgentPathfinder pricing"
 
 # Or direct API
 curl -X POST http://127.0.0.1:8000/query \

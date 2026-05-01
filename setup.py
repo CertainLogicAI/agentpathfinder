@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
     name="agentpathfinder",
-    version="1.0.1",
-    description="Deterministic task orchestration with cryptographic sharding",
+    version="1.2.8",
+    description="Signed, tamper-evident task tracking for AI agents",
     author="CertainLogic",
     url="https://github.com/CertainLogicAI/agentpathfinder",
     packages=find_packages(),

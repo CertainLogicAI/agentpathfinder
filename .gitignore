@@ -8,3 +8,14 @@ build/
 pathfinder_data/
 *.log
 .DS_Store
+
+# Build artifacts
+.build_output/
+.build_data/
+.pytest_cache/
+
+# Dev tools
+scripts/
+test_build_system.sh
+PRO-WAITLIST.md
+BETA_SUMMARY.md

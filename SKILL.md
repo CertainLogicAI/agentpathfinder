@@ -1,9 +1,18 @@
 ---
-summary: "Tamper-evident cryptographic tracking for AI agent tasks"
+summary: "Signed, tamper-evident task tracking for AI agents"
 read_when: ["installing", "configuring", "troubleshooting"]
 name: AgentPathfinder
-description: "Unlimited tamper-evident cryptographic task tracking for AI agents. Green = proven complete. Red = failed or incomplete. Free forever — no usage caps, no telemetry. Data stays in ~/.agentpathfinder only. See SAFETY.md for full disclosure."
-version: 1.2.7
+description: |
+  Signed, tamper-evident task tracking for AI agents. Records what agents claim with cryptographic signatures.
+  
+  ✅ Green = agent CLAIMED completion (signed)
+  ❌ Red = agent CLAIMED failure (signed)
+  ⚠️ Not verified — the system records and signs claims, but does NOT independently verify that work was actually done.
+  
+  Free forever — no usage caps, no telemetry. Data stays in ~/.agentpathfinder only.
+  
+  See SAFETY.md for full disclosure of limitations.
+version: "1.2.8"
 author: CertainLogic
 license: MIT
 platforms: [linux, macos]
@@ -11,25 +20,34 @@ platforms: [linux, macos]
 
 # AgentPathfinder
 
-**Green = cryptographically proven complete. Red = not. Dead simple in every reply.**
+**Green = agent claimed complete. Red = agent claimed failed. Know what your agent actually said.**
 
-AgentPathfinder gives your AI agents cryptographic proof of task completion. Decompose any task into N steps, shard a master key across them via XOR, and only reconstruct the key when every step finishes successfully. Every event is HMAC-SHA256 signed and written to an append-only audit trail.
+## What This Is
 
-**Free forever, unlimited tasks, no usage caps.** Upgrade when you want a dashboard, multi-agent views, or exportable audit files.
+This system gives you a **cryptographically signed, tamper-evident record of what your agent claims happened.** The audit trail detects unauthorized edits. **It does not independently verify that the agent's claim is true.** An agent can still falsely claim completion — the system just records that claim with a signature so you know who said what when.
 
 ## What You Get
 
-| Feature | How It Works |
-|---------|-------------|
-| ✅ Unlimited tamper-evident tracking | Green/red in every message |
-| ✅ Cryptographic sharding | 256-bit master key → N+1 shards via XOR |
-| ✅ Audit trail | HMAC-SHA256 signed, append-only JSONL |
-| ✅ Crash recovery | Atomic writes + fsync + rename |
-| ✅ CLI with visual confirmations | `pf status` shows ✅/❌/⏳ at a glance |
+| Feature | How It Works | Truth Status |
+|---------|-------------|--------------|
+| ✅ Signed task tracking | Green = agent signed claim of completion | NOT verified — recorded only |
+| ❌ Signed failure tracking | Red = agent signed claim of failure | NOT verified — recorded only |
+| 🔒 Cryptographic signing | HMAC-SHA256 signatures on every claimed event | Signature is real |
+| 📋 Tamper-evident audit | Unauthorized edits break HMAC signatures | Tampering detected if no key |
+| 🔄 Crash recovery | Atomic writes + fsync + rename | Works |
+| 📊 Visual status | `pf status` shows ✅/❌/⏳ at a glance | Shows CLAIMED status |
 
 **Pro (coming soon):** Dashboard, multi-agent tracking, audit exports, webhooks.
+**Enterprise:** On-prem, SSO/SAML, hosted vault.
 
-**Enterprise:** On-prem, SSO/SAML, hosted vault for compliance.
+## What This Is NOT
+
+| ❌ Does NOT | Why |
+|-------------|-----|
+| Verify tasks are actually complete | It records claims. You must verify the work independently. |
+| Prevent agents from lying | It signs what the agent says. False claims get signed too. |
+| Replace human verification | It helps you track claims. You still need to check the actual work. |
+| Prove truth of claims | It proves who claimed what and when. Not whether the claim is true. |
 
 ## Install
 
@@ -52,26 +70,29 @@ pf create "deploy_api" "run_tests" "build_docker" "push_registry" "restart_servi
 # Run it (simulation mode — see what it looks like)
 pf run a7f3d2e1-...
 # → ⏳ SIMULATION MODE — No real code executed.
-#    ✅ deploy_api is complete! Progress: 4/4
-#    ✅ Step 1 complete: run_tests (token: tok_abc123…)
-#    ✅ Step 2 complete: build_docker (token: tok_def456…)
+#    ✅ deploy_api is complete per agent claim. Progress: 4/4
+#    ✅ Step 1: agent claimed run_tests complete (token: tok_abc123…)
+#    ✅ Step 2: agent claimed build_docker complete (token: tok_def456…)
 
-# Check status — one glance says it all
+# Check status — one glance shows CLAIMED status
 pf status a7f3d2e1-...
-# → ✅ task_complete 4/4 (all green)
+# → ✅ task_complete 4/4 (all green — agent claims complete)
+# ⚠️ Remember: green = agent claimed complete, not verified complete
 
-# Verify audit integrity
+# Check audit integrity (NOT truth verification)
 pf audit a7f3d2e1-...
-# → ✅ All 6 events verified
+# → ✅ All 6 events signed — integrity intact
+# → ⚠️ Signing integrity means no unauthorized edits. Not validated truth.
 
-# Reconstruct the master key (only works when all steps pass)
+# Reconstruct the master key (requires all steps to have been CLAIMED complete)
 pf reconstruct a7f3d2e1-...
-# → ✅ Key reconstructed successfully
+# → ✅ Key reconstructed — all claimed steps present
+# → ⚠️ Reconstruction proves all claimed steps exist. Not that they succeeded.
 ```
 
 ## Real Execution (Python SDK)
 
-The CLI marks steps complete for demo. For real automation, bind Python functions:
+The SDK **executes functions YOU provide and records what they return.**
 
 ```python
 from pathfinder_client import PathfinderClient
@@ -80,24 +101,22 @@ from agentpathfinder import AgentRuntime
 pf = PathfinderClient()
 tid = pf.create("deploy", ["test", "build", "push"])
 
-# Bind real functions
+# Bind real functions — YOU must independently verify they work
 def run_tests():
-    subprocess.run(["pytest", "-v"], check=True)
-    return "passed"
-
-def build_docker():
-    subprocess.run(["docker", "build", "-t", "app", "."], check=True)
-    return "app:latest"
+    result = pytest.main(["-v"])
+    # ⚠️ Pathfinder records that this function was called
+    # ⚠️ It does NOT independently verify the tests actually passed
+    return "passed" if result == 0 else "failed"
 
 # Execute
 runtime = AgentRuntime(pf.engine, pf.issuing)
 runtime.execute_task(tid, {
     "test": run_tests,
-    "build": build_docker,
-    "push": lambda: subprocess.run(["docker", "push", "app"], check=True),
+    "build": lambda: docker.build("."),
+    "push": lambda: docker.push("app"),
 })
 
-# If any step fails → task pauses, audit trail shows exactly what happened
+# If any step fails → task pauses, audit trail shows what agent claimed happened
 # Retry after fixing:
 runtime.retry_step(tid, 2, build_docker)
 ```
@@ -130,18 +149,40 @@ runtime.retry_step(tid, 2, build_docker)
 
 ## Security
 
-**Tamper-evident, not tamper-proof.** Every event is HMAC-SHA256 signed with a derived audit key. If someone modifies the audit trail or task files, verification fails and you know immediately.
+**Tamper-evident in audit trail, not tamper-proof against the agent.**
 
-**Current limitations:** A malicious agent with filesystem access to `~/.agentpathfinder/vault/` could read shards and reconstruct the key. For full isolation, upgrade to Pro (hosted vault) or Enterprise (TEE/remote attestation).
+- ✅ **Unauthorized edits** to the audit log → HMAC verification fails → detected
+- ❌ **Authorized agent** writes false claim → HMAC verification passes → NOT detected
+- ❌ **Agent with filesystem access** to `~/.agentpathfinder/vault/` → can read shards, reconstruct key, forge claims
 
-| Feature | How It Works |
-|---------|-------------|
-| Cryptographic sharding | 256-bit master key split into N+1 shards via XOR |
-| Atomic persistence | temp + fsync + rename — no partial writes |
-| Crash recovery | Steps in `running` state detected and reset |
-| Concurrency control | Advisory file locks per task |
-| Audit integrity | HMAC-SHA256 chain, any edit breaks verification |
-| Agent authentication | Shared-secret HMAC tokens per agent |
+| Feature | How It Works | Verification Status |
+|---------|-------------|-------------------|
+| Cryptographic sharding | 256-bit master key → N+1 shards via XOR | Real |
+| Atomic persistence | temp + fsync + rename — no partial writes | Real |
+| Crash recovery | Steps in `running` state detected and reset | Real |
+| Concurrency control | Advisory file locks per task | Real |
+| Audit integrity | HMAC-SHA256 chain, unauthorized edits detected | Real |
+| Agent authentication | Shared-secret HMAC tokens per agent | Real |
+| Claim verification | None — signs whatever agent provides | NOT implemented |
+
+For full isolation from agent tampering: upgrade to Pro (hosted vault) or Enterprise (TEE/remote attestation).
+
+## Frequently Asked Questions
+
+**Q: Does "green = complete" mean the task was actually finished?**
+A: No. Green means the agent CLAIMED completion and the claim was signed. The claim itself is not independently verified.
+
+**Q: Can an agent trick the system by saying "done" when the task failed?**
+A: Yes. The system records and signs whatever the agent claims. You must independently verify the actual work.
+
+**Q: What does "cryptographically signed" actually prove?**
+A: It proves: (1) who made the claim, (2) when they made it, (3) that the claim hasn't been edited by anyone without the signing key. It does NOT prove the claim is true.
+
+**Q: How is this different from just trusting the agent?**
+A: You get a signed, tamper-evident record of what the agent claimed. This is useful for accountability ("who said what when") and detecting unauthorized edits. But the agent's claims themselves are still trusted.
+
+**Q: Will Pro or Enterprise add real verification?**
+A: Pro adds dashboard/convenience. Enterprise may add TEE/hosted vault for stronger isolation. Neither automatically verifies that agent claims are true. Independent verification is always required.
 
 ## Data Storage
 
@@ -149,52 +190,24 @@ runtime.retry_step(tid, 2, build_docker)
 
 | What | Where | Content |
 |------|-------|---------|
-| Task metadata | `~/.agentpathfinder/tasks/*.json` | Task name, steps, status |
+| Task metadata | `~/.agentpathfinder/tasks/*.json` | Task name, steps, agent-reported status |
 | Vault shards | `~/.agentpathfinder/vault/*.shard` | 32-byte shards per step |
-| Audit trail | `~/.agentpathfinder/audit/*.jsonl` | HMAC-signed events |
+| Audit trail | `~/.agentpathfinder/audit/*.jsonl` | HMAC-signed event claims |
 | Agent config | `~/.agentpathfinder/agents/registry.json` | Agent IDs, shared secrets |
 
 ## CLI Reference
 
-| Command | What It Does |
-|---------|-------------|
-| `pf install` | One-command setup, verify deps |
-| `pf create <name> [steps...]` | Create a new sharded task |
-| `pf run <task_id>` | Simulate running all steps |
-| `pf status <task_id>` | Visual status: ✅/❌/⏳ at a glance |
-| `pf audit <task_id>` | Show tamper-verified audit trail |
-| `pf reconstruct <task_id>` | Reconstruct master key (all steps required) |
-| `pf register-agent <id>` | Register an agent for authenticated execution |
-| `pf dashboard` | Generate static HTML dashboard |
+| Command | What It Does | Claim Verification |
+|---------|-------------|-------------------|
+| `pf install` | One-command setup, verify deps | N/A |
+| `pf create <name> [steps...]` | Create a new sharded task | N/A |
+| `pf run <task_id>` | Simulate running all steps (records claims) | Signs agent claims, does NOT verify |
+| `pf status <task_id>` | Visual status: ✅/❌/⏳ at a glance | Shows CLAIMED status |
+| `pf audit <task_id>` | Show audit trail signing integrity | Detects unauthorized edits |
+| `pf reconstruct <task_id>` | Reconstruct master key | Requires all steps CLAIMED complete |
+| `pf register-agent <id>` | Register an agent for authenticated execution | N/A |
 
-## Dashboard
-
-```bash
-# Generate a static HTML dashboard (no server needed)
-python3 scripts/dashboard_static.py --output report.html
-# Open report.html in your browser
-
-# Or start live dashboard (requires Flask)
-pf dashboard --port 8080
-# Open http://localhost:8080
-```
-
-The dashboard shows:
-- **Tasks tab:** Live status, progress bars, step icons
-- **Audit tab:** Recent events with timestamps
-- **Data storage:** Confirms everything is local in `~/.agentpathfinder/`
-
-## Troubleshooting
-
-| Problem | Fix |
-|---------|-----|
-| "agentpathfinder not found" | Run `pf install` to verify setup |
-| "Task not found" | Check task ID. Use `pf status` to list recent tasks |
-| "Reconstruction failed" | Not all steps complete. Run `pf status` to see which |
-| "Step already running" | Previous run crashed. Auto-reset or call `reset_running_step()` |
-| "Agent auth failed" | Re-run `pf register-agent <id>` |
-| Dashboard won't start | Install Flask: `pip install flask` |
-| Audit reports tampered | Files were modified outside the engine. Investigate immediately |
+**Free tier is task tracking with honest limitations:** local vault, no encryption, agent must be trusted with filesystem access. Upgrade for encrypted vault and other protections.
 
 ## License
 
@@ -202,4 +215,4 @@ MIT. Free forever. No usage caps. Pro dashboard coming soon.
 
 ---
 
-Built by [CertainLogic](https://certainlogic.ai) — deterministic AI, cryptographic proof.
+Built by [CertainLogic](https://certainlogic.ai) — honest tools for honest builders.

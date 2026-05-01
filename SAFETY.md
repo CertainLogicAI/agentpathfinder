@@ -164,6 +164,35 @@ All releases are published to GitHub with commit signatures:
 
 ---
 
+## Critical Limitations
+
+### The Audit Trail Cannot Detect a Compromised Agent
+
+AgentPathfinder's audit trail uses HMAC-SHA256 signatures to detect **unauthorized tampering** — edits made by someone who does NOT have the signing key.
+
+However, if an AI agent (or any process) running on the same machine reads the vault shards from `~/.agentpathfinder/vault/`, it can:
+
+1. Reconstruct the master key (all shards are present in the vault)
+2. Derive the audit signing key from the master key
+3. Create forged audit entries with valid HMAC signatures
+4. The `pf audit` command will report these forged entries as valid
+
+**This is a fundamental limitation, not a bug. The audit trail proves "someone with the key signed this" — it does not prove "the agent's claim is true."**
+
+**To protect against this:**
+- Run agents in isolated environments where they cannot access `~/.agentpathfinder/`
+- Use separate system users: the agent runs as user `agent`, the vault is owned by user `pathfinder` with `chmod 700`
+- For production use, wait for the **Pro hosted vault** (separate server, no filesystem access) or **Enterprise TEE** (hardware-isolated execution)
+- Always independently verify claimed results using outside checks (CI/CD status, HTTP health endpoints, artifact hashes)
+
+### No Automatic Verification of Truth
+
+AgentPathfinder records and signs claims. It does NOT verify the content of those claims. If an agent claims it completed step 5 but actually skipped it, the system will record a valid "STEP_COMPLETE" event for step 5.
+
+**Verification is always the user's responsibility.**
+
+---
+
 ## Responsible Disclosure
 
 Found a security issue? Contact us before going public.
