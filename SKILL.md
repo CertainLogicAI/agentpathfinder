@@ -90,6 +90,53 @@ pf reconstruct a7f3d2e1-...
 # → ⚠️ Reconstruction proves all claimed steps exist. Not that they succeeded.
 ```
 
+## Chat Notifications
+
+Get step/task status updates in your agent's main chat channel:
+
+```python
+from agentpathfinder import AgentRuntime
+
+# Define notification callbacks
+# These run synchronously when state changes occur
+
+def notify_step_complete(step_number, result):
+    # Your agent sends chat message here
+    # e.g., message.send(f"✅ Step {step_number} complete")
+    print(f"✅ Step {step_number} complete: {result}")
+
+def notify_step_fail(step_number, error):
+    # Your agent sends chat message here
+    # e.g., message.send(f"❌ Step {step_number} failed")
+    print(f"❌ Step {step_number} failed: {error}")
+
+def notify_task_done(task_id, status):
+    # Your agent sends chat message here
+    # e.g., message.send(f"📋 Task done: {status['completed_steps']}/{status['num_steps']}")
+    print(f"📋 Task {task_id} complete: {status['completed_steps']}/{status['num_steps']}")
+
+# Create runtime with callbacks
+runtime = AgentRuntime(
+    pf.engine, pf.issuing,
+    on_step_complete=notify_step_complete,
+    on_step_fail=notify_step_fail,
+    on_task_complete=notify_task_done
+)
+
+# Execute — notifications fire automatically
+runtime.execute_task(task_id, step_functions)
+```
+
+**How it works:**
+- `on_step_complete(step_number, result)` — fires after step succeeds and token is issued
+- `on_step_fail(step_number, error)` — fires after step throws exception
+- `on_task_complete(task_id, status)` — fires after all steps complete (or task paused)
+
+**Limitations:**
+- Callbacks are synchronous — they block execution until they return
+- CLI users don't get notifications (no OpenClaw context)
+- Your agent must implement the actual message sending (we provide the hook, you wire it)
+
 ## Real Execution (Python SDK)
 
 The SDK **executes functions YOU provide and records what they return.**

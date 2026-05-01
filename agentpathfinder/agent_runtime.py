@@ -17,15 +17,23 @@ class AgentRuntime:
     - Validates result
     - Requests token from issuing layer
     - Optionally authenticates with agent_id / api_key (Phase 5)
+    - Optionally notifies via callbacks (chat, webhooks, logging)
     """
 
     def __init__(self, task_engine: TaskEngine, issuing_layer: IssuingLayer,
-                 agent_id: str = None, api_key: str = None):
+                 agent_id: str = None, api_key: str = None,
+                 on_step_complete: Callable[[int, Any], None] = None,
+                 on_step_fail: Callable[[int, str], None] = None,
+                 on_task_complete: Callable[[str, Dict[str, Any]], None] = None):
         self.task_engine = task_engine
         self.issuing = issuing_layer
         # Phase 5: optional agent credentials
         self.agent_id = agent_id
         self.api_key = api_key  # hex-encoded shared secret
+        # Chat notification callbacks
+        self.on_step_complete = on_step_complete
+        self.on_step_fail = on_step_fail
+        self.on_task_complete = on_task_complete
 
     def _sign_payload(self, payload: str) -> Optional[str]:
         """Sign a payload with the agent's API key (Phase 5)."""
@@ -98,11 +106,19 @@ class AgentRuntime:
             result["result"] = step_result
             result["token"] = token
 
+            # Notify callback
+            if self.on_step_complete:
+                self.on_step_complete(step_number, step_result)
+
         except Exception as e:
             error_msg = f"{type(e).__name__}: {str(e)}"
             print(f"  [Agent] Step {step_number} FAILED: {error_msg}")
             result["status"] = "failed"
             result["error"] = error_msg
+
+            # Notify callback
+            if self.on_step_fail:
+                self.on_step_fail(step_number, error_msg)
 
         return result
 
@@ -162,7 +178,13 @@ class AgentRuntime:
         else:
             print(f"  Task RECONSTRUCTION FAILED — tamper detected")
 
-        return self.task_engine.get_status(task_id)
+        status = self.task_engine.get_status(task_id)
+
+        # Notify callback
+        if self.on_task_complete:
+            self.on_task_complete(task_id, status)
+
+        return status
 
     def retry_step(self, task_id: str, step_number: int,
                    step_func: Callable, step_args: Dict[str, Any] = None,
