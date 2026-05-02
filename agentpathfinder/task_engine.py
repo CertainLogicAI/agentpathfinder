@@ -163,6 +163,23 @@ class TaskEngine:
         shards.append(shard_from_hex(task["issuer_shard"]))
         return reconstruct_key(shards)
 
+    def get_tool_audit(self, task_id: str, step_number: int) -> "ToolAuditChain":
+        """Get a ToolAuditChain for tracking tool calls in a step.
+
+        Example:
+            audit = engine.get_tool_audit("tsk_abc", 1)
+            tool_id = audit.log_tool_call("exec", {"command": "ls -la"})
+            result = subprocess.run(...)
+            audit.log_tool_result(tool_id, result.stdout)
+        """
+        task = self.get_task(task_id)
+        master_key = self._reconstruct_master_key(task)
+        audit_key = self._derive_audit_key(master_key)
+        audit_trail = AuditTrail(
+            self.data_dir / "audit" / f"{task_id}.jsonl", audit_key
+        )
+        return ToolAuditChain(task_id, step_number, audit_trail)
+
     # ------------------------------------------------------------------
     # Core CRUD
     # ------------------------------------------------------------------

@@ -87,6 +87,45 @@ Every step is signed by the agent. If someone edits the results file without per
 | 💬 **Chat notifications** | SDK callbacks send real-time step/task updates to your agent's main chat channel. See progress as it happens. |
 | 🖥️ **Dashboard** (static) | One-page HTML report of all your tasks. No server needed. |
 | 🧠 **Optional Brain integration** | Pull facts from your knowledge base if you have one set up. |
+| 🔧 **Tool chain audit** *(v1.3)* | Cryptographically log every tool call and result. Full args and output, not just hashes. Sub-tool chains tracked up to depth 50. |
+
+---
+
+## What Tool Chain Audit Does (v1.3)
+
+**Problem:** You trust your agent to run `exec`, `browser`, or `write` operations. But if something goes wrong, you have no record of exactly which command ran, what it got back, and whether the log was tampered with.
+
+**Solution:** Every tool call is HMAC-signed in the same audit trail as task events:
+
+```python
+from agentpathfinder import TaskEngine
+
+engine = TaskEngine()
+task_id = engine.create_task("deploy", [{"name": "test"}, {"name": "build"}])
+
+# Get tool audit for step 1
+audit = engine.get_tool_audit(task_id, step_number=1)
+
+# Log a tool call with full args
+tool_id = audit.log_tool_call("exec", {"command": "pytest --tb=short"})
+
+# ... run the command ...
+
+# Log the result with full output
+audit.log_tool_result(tool_id, {"stdout": "3 passed, 0 failed", "stderr": ""})
+```
+
+**What gets logged:**
+- Tool name and category (system_command, web_automation, filesystem, etc.)
+- Full arguments (not just hashes)
+- Full output or error details
+- Duration and exit code
+- Sub-tool depth and parent references
+
+**Why this matters for company brain:**
+When your agent writes to production, you need to know exactly what command ran and what happened. Not a hash of it — the actual command. Signed so you know it wasn't edited later.
+
+---
 
 ---
 

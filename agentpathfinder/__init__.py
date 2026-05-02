@@ -7,3 +7,4 @@ from .task_engine import TaskEngine, TaskState
 from .issuing_layer import IssuingLayer
 from .agent_runtime import AgentRuntime
 from .audit_trail import AuditTrail
+from .tool_audit import ToolAuditChain, AuditedToolExecutor

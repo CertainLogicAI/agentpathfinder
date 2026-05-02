@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="agentpathfinder",
-    version="1.2.8",
+    version="1.3.0",
     description="Signed, tamper-evident task tracking for AI agents",
     author="CertainLogic",
     url="https://github.com/CertainLogicAI/agentpathfinder",
