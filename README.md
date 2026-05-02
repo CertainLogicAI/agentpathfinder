@@ -84,6 +84,7 @@ Every step is signed by the agent. If someone edits the results file without per
 | 🔒 **Proof of who said what** | Every step is signed. You know which agent claimed what, and when. |
 | 📋 **Tamper-proof records** | If someone edits the task history without permission, you'll know. The signature breaks. |
 | 🔄 **Resume where you left off** | If your agent gets interrupted (power loss, killed, timed out), see exactly which step it was on. Retry from there instead of starting over. |
+| 💬 **Chat notifications** | SDK callbacks send real-time step/task updates to your agent's main chat channel. See progress as it happens. |
 | 🖥️ **Dashboard** (static) | One-page HTML report of all your tasks. No server needed. |
 | 🧠 **Optional Brain integration** | Pull facts from your knowledge base if you have one set up. |
 
@@ -159,6 +160,59 @@ runtime.execute_task(task_id, {
 ```
 
 **The SDK executes the functions YOU provide.** AgentPathfinder records that the function was called and what it returned. It does NOT independently verify that the function actually did what it claimed.
+
+---
+
+## Chat Notifications (Send Status to Your Agent's Chat)
+
+Get real-time step and task updates delivered to your agent's main chat channel:
+
+```python
+from agentpathfinder import AgentRuntime
+
+# Define notification callbacks — your agent sends messages as state changes
+def notify_step_complete(step_number, result):
+    message.send(f"✅ Step {step_number} complete")
+
+def notify_step_fail(step_number, error):
+    message.send(f"❌ Step {step_number} failed: {error}")
+
+def notify_task_done(task_id, status):
+    message.send(f"📋 Task {task_id} finished: {status['progress']}")
+
+# Create runtime with chat hooks
+runtime = AgentRuntime(
+    engine, issuer,
+    on_step_complete=notify_step_complete,
+    on_step_fail=notify_step_fail,
+    on_task_complete=notify_task_done
+)
+
+# Execute — your chat receives live updates as steps run
+runtime.execute_task(task_id, {
+    "test": run_tests,
+    "build": build_image,
+    "push": push_registry,
+})
+```
+
+**What you see in chat:**
+```
+✅ Step 1 complete
+✅ Step 2 complete
+❌ Step 3 failed: Connection timeout
+📋 Task deploy-abc123 paused: 2/4 steps complete
+```
+
+**How it works:**
+- `on_step_complete(step, result)` — fires when step succeeds + token issued
+- `on_step_fail(step, error)` — fires when step throws exception
+- `on_task_complete(task_id, status)` — fires when all steps done (or task paused)
+
+**Important:**
+- Callbacks are synchronous — they block until your `message.send()` returns
+- CLI users don't get chat (no agent context) — SDK only
+- You implement `message.send()` — we provide the hooks, you wire to your channel
 
 ---
 

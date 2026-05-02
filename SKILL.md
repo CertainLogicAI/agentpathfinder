@@ -36,6 +36,7 @@ This system gives you a **cryptographically signed, tamper-evident record of wha
 | 📋 Tamper-evident audit | Unauthorized edits break HMAC signatures | Tampering detected if no key |
 | 🔄 Crash recovery | Atomic writes + fsync + rename | Works |
 | 📊 Visual status | `pf status` shows ✅/❌/⏳ at a glance | Shows CLAIMED status |
+| 💬 Chat notifications | SDK callbacks send updates to your agent's chat | Real-time status updates |
 
 **Pro (coming soon):** Dashboard, multi-agent tracking, audit exports, webhooks.
 **Enterprise:** On-prem, SSO/SAML, hosted vault.
