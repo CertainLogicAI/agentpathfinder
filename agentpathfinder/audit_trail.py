@@ -87,6 +87,9 @@ class AuditTrail:
                     json.dumps(event, sort_keys=True, default=str),
                     stored_hmac or "",
                 )
+                # Preserve truncated HMAC for display
+                if stored_hmac:
+                    event["hmac_truncated"] = stored_hmac[:16] + "..."
                 events.append(event)
 
         return events
