@@ -1,18 +1,20 @@
 ---
-summary: "Signed, tamper-evident task tracking for AI agents"
+summary: "Cryptographic audit trails for AI agent tool calls"
 read_when: ["installing", "configuring", "troubleshooting"]
 name: AgentPathfinder
 description: |
-  Signed, tamper-evident task tracking for AI agents. Records what agents claim with cryptographic signatures.
+  Cryptographically signed audit trails for AI agent tool calls. Every tool invocation is HMAC-SHA256 signed. Full arguments and results logged. Live dashboard shows which command failed, what the error was, whether agent claimed success falsely. The provenance layer for agent execution.
   
-  ✅ Green = agent CLAIMED completion (signed)
-  ❌ Red = agent CLAIMED failure (signed)
-  ⚠️ Not verified — the system records and signs claims, but does NOT independently verify that work was actually done.
+  ✅ See which specific tool failed and why
+  ✅ Catch agents claiming success when tools errored  
+  ✅ Detect missing tool calls (agent lied about execution)
+  ✅ Visual dashboard with real-time HMAC signatures
+  ❌ Does NOT verify work was actually done — records claims only
   
   Free forever — no usage caps, no telemetry. Data stays in ~/.agentpathfinder only.
   
   See SAFETY.md for full disclosure of limitations.
-version: "1.2.8"
+version: "1.3.0"
 author: CertainLogic
 license: MIT
 platforms: [linux, macos]
@@ -20,7 +22,7 @@ platforms: [linux, macos]
 
 # AgentPathfinder
 
-**Green = agent claimed complete. Red = agent claimed failed. Know what your agent actually said.**
+**Your AI agent said "Done." Prove it.** Cryptographically signed tool-level audit trails. See exactly which command failed, what the error was, and whether your agent lied about success.
 
 ## What This Is
 
