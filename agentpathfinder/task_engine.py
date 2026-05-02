@@ -23,6 +23,7 @@ from .pathfinder_core import (
     hmac_sign, derive_key
 )
 from .audit_trail import AuditTrail
+from .tool_audit import ToolAuditChain
 
 logger = logging.getLogger(__name__)
 

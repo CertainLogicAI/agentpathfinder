@@ -183,11 +183,13 @@ class ToolAuditChain:
 
     def detect_hanging_calls(self, timeout_seconds: int = 300) -> List[Dict[str, Any]]:
         """Find tool calls that have been 'invoked' longer than timeout."""
-        now = time.time()
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).timestamp()
         hanging = []
         for call in self._active_calls.values():
-            invoked_ts = time.strptime(call["timestamp_invoked"], "%Y-%m-%dT%H:%M:%SZ")
-            invoked_epoch = time.mktime(invoked_ts)
+            # Parse ISO timestamp with Z suffix
+            ts = call["timestamp_invoked"].replace("Z", "+00:00")
+            invoked_epoch = datetime.fromisoformat(ts).timestamp()
             if now - invoked_epoch > timeout_seconds:
                 hanging.append(call)
         return hanging
