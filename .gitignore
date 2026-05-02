@@ -14,8 +14,8 @@ pathfinder_data/
 .build_data/
 .pytest_cache/
 
-# Dev tools
-scripts/
+# Dev tools (old scripts removed)
+# scripts/  ← dashboard_v130.py is now a product feature
 test_build_system.sh
 PRO-WAITLIST.md
 BETA_SUMMARY.md

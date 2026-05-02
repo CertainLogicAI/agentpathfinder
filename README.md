@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://clawhub.ai/certainlogicai/agentpathfinder-agent-task-tracker-free">
-    <img src="https://img.shields.io/badge/ClawHub-v1.2.8-blue?logo=package" alt="ClawHub">
+    <img src="https://img.shields.io/badge/ClawHub-v1.3.0-blue?logo=package" alt="ClawHub">
   </a>
   <a href="https://github.com/CertainLogicAI/agentpathfinder">
     <img src="https://img.shields.io/github/stars/CertainLogicAI/agentpathfinder?style=social" alt="Stars">
@@ -196,6 +196,50 @@ runtime.execute_task(task_id, {
     "build": lambda: your_build_function(), # YOU must verify output
     "push": lambda: your_push_function(),   # YOU must verify registry
 })
+```
+
+---
+
+## Live Audit Dashboard (v1.3.0)
+
+Watch your agent's tool calls in real-time with cryptographic proof.
+
+```bash
+# Generate dashboard for a specific task
+python3 scripts/dashboard_v130.py generate --task deploy_api
+# → Opens dashboard.html in your browser
+
+# Watch mode: auto-refreshes every 2 seconds
+python3 scripts/dashboard_v130.py watch
+```
+
+**What you see:**
+- 🔧 Every tool call with full arguments
+- ✅ Every tool result with exit code and output
+- 🔐 HMAC signature next to each event
+- 🛡️ Integrity panel: "17 events, 0 tampered"
+- ⚠️ Fraud alerts: missing tool results, hanging calls
+
+**Dashboard preview:**
+```
+Task: deploy_api                    Status: 🔄 Running
+Agent: agent_1                     Started: 14:23:01 UTC
+
+Step 1: run_tests
+├── 🔧 TOOL_INVOKED  14:23:02  exec
+│   args: {command: "pytest tests/ --tb=short", timeout: 120}
+│   🔐 HMAC: a1b2c3d4e5f6...
+│
+├── ✅ TOOL_RESULT   14:23:05  2.3s
+│   exit_code: 0
+│   stdout: "47 passed in 2.34s"
+│   🔐 HMAC: 7d8e9f0a1b2c...
+
+🔐 Audit Trail Integrity    17 events
+  Valid HMAC:    17/17 ✅    Tampered: 0
+```
+
+**Why this matters:** Other platforms show you traces. AgentPathfinder shows you proof.
 ```
 
 **The SDK executes the functions YOU provide.** AgentPathfinder records that the function was called and what it returned. It does NOT independently verify that the function actually did what it claimed.
