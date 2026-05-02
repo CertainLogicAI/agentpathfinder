@@ -1,6 +1,6 @@
 # AgentPathfinder
 
-**Green = agent said done. Red = agent said failed. Know what your agent actually claimed.** ✅❌
+**Your AI agent said "Done." Prove it.** Cryptographically signed tool-level audit trails. See exactly which command failed, what the error was, and whether your agent lied about success.
 
 <p align="center">
   <a href="https://clawhub.ai/certainlogicai/agentpathfinder-agent-task-tracker-free">
@@ -15,24 +15,23 @@
 
 ## What This Is
 
-A **receipt system for AI agents.** It records who claimed what and when, with proof that the record wasn't tampered with. 
+The **provenance layer for AI agent execution.** Every tool call is cryptographically signed with HMAC-SHA256. Every failure is recorded. Every lie is detectable.
 
-Like a security camera — it doesn't stop theft, but it shows you who was there. AgentPathfinder doesn't stop agents from making mistakes, but it proves what they claimed with a signature you can verify.
+AgentPathfinder doesn't make your agent honest. It makes dishonesty **proveable.**
 
 ---
 
 ## The Problem
 
-Your AI agent says **"Done"** — but did it actually finish?
+Your AI agent says **"Done"** — but you have no idea what actually happened at the tool level.
 
-> "If an agent can't show you what it claimed, you're just trusting a hallucination machine. No receipts, no trust." 
-> — [@alexabelonix](https://x.com/alexabelonix), 10x hackathon winner, 20K followers
-
-It skipped step 3. Failed silently. Moved on.
+- **Silent failures:** The agent claims success while `docker push` returned `exit_code=1`
+- **Missing steps:** The agent skips `pytest` entirely and claims all tests passed
+- **Wrong commands:** The agent runs `echo "done"` instead of the actual build
+- **Crash recovery:** The agent restarts, has no memory of which tool calls were in-flight
+- **Multi-agent confusion:** Two agents claim the same step — who actually did it?
 
 You only find out when your customer does. 😤
-
-**AgentPathfinder** gives you a signed record of every step. Green = agent signed claim of completion. Red = agent signed failure. You see what was claimed, not just what was said.
 
 ---
 
