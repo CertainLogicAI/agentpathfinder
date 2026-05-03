@@ -354,3 +354,23 @@ class AuditedToolExecutor:
             duration_ms = int((time.time() - start) * 1000)
             self.audit.log_tool_error(tool_id, e, duration_ms)
             raise
+
+
+    # ------------------------------------------------------------------
+    # Backward compatibility aliases (v1.2.x → v1.3.0)
+    # ------------------------------------------------------------------
+
+    def summarize(self) -> str:
+        """Backward compat alias for get_tool_summary()."""
+        summary = self.get_tool_summary()
+        lines = [
+            f"Task: {summary['task_id']} (step {summary['step_number']})",
+            f"Events: {summary['total_tool_events']}",
+            f"Active: {summary['active_calls']}",
+            f"By tool: {summary['by_tool']}",
+        ]
+        return "\n".join(lines)
+    
+    def verify_integrity(self) -> dict:
+        """Verify HMAC signatures on all logged events."""
+        return self.audit.verify_integrity()

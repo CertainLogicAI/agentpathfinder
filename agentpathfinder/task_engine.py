@@ -451,4 +451,73 @@ class TaskEngine:
         if api_key_hex is None:
             return False
         api_key_bytes = bytes.fromhex(api_key_hex)
-        return hmac_sign(api_key_bytes, payload) == signature  # constant-time inside hmac_sign/verify
+# ------------------------------------------------------------------
+# Backward compatibility aliases (v1.2.x → v1.3.0)
+# ------------------------------------------------------------------
+
+# Old API: create() → new: create_task()
+# Old API: claim_step() → new: set_step_running() + manual audit state update
+
+
+def _old_create_task_compat(engine: TaskEngine, name: str, steps: list) -> str:
+    """Backward compat: steps as List[str] → List[Dict]."""
+    if steps and isinstance(steps[0], str):
+        steps = [{"name": s} for s in steps]
+    return engine.create_task(name, steps)
+
+
+def _old_claim_step_compat(engine: TaskEngine, task_id: str, step_name: str,
+                           status: str = "complete", msg: str = "") -> None:
+    """Backward compat: claim_step() → set_step_running() + audit log."""
+    task = engine.get_task(task_id)
+    step_num = None
+    for i, s in enumerate(task.get("steps", [])):
+        if s.get("name") == step_name:
+            step_num = i
+            break
+    if step_num is None:
+        raise ValueError(f"Step '{step_name}' not found")
+
+    from .audit_trail import AuditTrail
+    import secrets
+    idempotency_key = f"compat-{secrets.token_hex(4)}"
+    engine.set_step_running(task_id, step_num, idempotency_key)
+
+    # Log the claim in the audit trail (per-task file)
+    audit_path = engine.tasks_dir / f"{task_id}_audit.jsonl"
+    master_key = engine._reconstruct_master_key(task)
+    audit_key = engine._derive_audit_key(master_key)
+    audit = AuditTrail(audit_path, audit_key)
+    audit.log("step_claimed", task_id,
+              step_number=step_num,
+              step_name=step_name,
+              status=status,
+              message=msg,
+              idempotency_key=idempotency_key)
+
+
+def _old_audit_trail_compat(engine: TaskEngine, task_id: str) -> dict:
+    """Backward compat: Return old-style audit result dict."""
+    task = engine.get_task(task_id)
+    master_key = engine._reconstruct_master_key(task)
+    audit_key = engine._derive_audit_key(master_key)
+    audit_path = engine.tasks_dir / f"{task_id}_audit.jsonl"
+    from .audit_trail import AuditTrail
+    audit = AuditTrail(audit_path, audit_key)
+    events = audit.read_trail(task_id)
+    return {
+        "task_id": task_id,
+        "event_count": len(events),
+        "all_hmac_valid": all(
+            ev.get("hmac_valid", True) for ev in events
+        ),
+        "events": events,
+    }
+
+
+# Monkey-patch for backward compat
+TaskEngine.create = lambda self, name, steps: _old_create_task_compat(self, name, steps)
+TaskEngine.claim_step = lambda self, task_id, step_name, status="complete", msg="": \
+    _old_claim_step_compat(self, task_id, step_name, status, msg)
+TaskEngine.audit_trail = lambda self, task_id: _old_audit_trail_compat(self, task_id)
+
