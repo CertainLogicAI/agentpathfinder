@@ -1,6 +1,23 @@
 ---
+summary: "Cryptographic audit trails for AI agent tool calls"
+read_when: ["installing", "configuring", "troubleshooting"]
 name: AgentPathfinder
-description: "Cryptographically signed audit trails for AI agent tool calls. Every tool invocation is HMAC-SHA256 signed. Full arguments and results logged. Live dashboard shows which command failed, what the error was, whether agent claimed success falsely. The provenance layer for agent execution."
+description: |
+  Cryptographically signed audit trails for AI agent tool calls. Every tool invocation is HMAC-SHA256 signed. Full arguments and results logged. Live dashboard shows which command failed, what the error was, whether agent claimed success falsely. The provenance layer for agent execution.
+  
+  ✅ See which specific tool failed and why
+  ✅ Catch agents claiming success when tools errored
+  ✅ Detect missing tool calls (agent lied about execution)
+  ✅ Visual dashboard with real-time HMAC signatures
+  ❌ Does NOT verify work was actually done — records claims only
+  
+  Free forever — no usage caps, no telemetry. Data stays in ~/.agentpathfinder only.
+  
+  See SAFETY.md for full disclosure of limitations.
+version: "1.3.1"
+author: CertainLogic
+license: MIT
+platforms: [linux, macos]
 ---
 
 # AgentPathfinder
