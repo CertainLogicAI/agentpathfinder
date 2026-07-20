@@ -126,8 +126,6 @@ When your agent writes to production, you need to know exactly what command ran 
 
 ---
 
----
-
 ## Why Free Forever?
 
 - Free = CLI + local vault + unlimited use
