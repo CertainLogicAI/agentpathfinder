@@ -341,6 +341,6 @@ runtime.execute_task(task_id, {
 
 ## Contributing
 
-MIT license. PRs welcome. Issues = features we didn't think of yet.
+BSL 1.1 license. PRs welcome. Issues = features we didn't think of yet.
 
 **Built by:** [CertainLogic](https://certainlogic.ai) — honest tools for honest builders.
