@@ -16,6 +16,8 @@ setup(
     install_requires=[],
     extras_require={
         "dashboard": ["flask>=2.0.0"],
+        "mcp": ["mcp>=1.27.0", "httpx>=0.27.0"],
+        "boxlite": ["boxlite>=0.1.0"],
     },
     license="MIT",
 )
