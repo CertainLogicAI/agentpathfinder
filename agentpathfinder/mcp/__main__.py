@@ -3,6 +3,7 @@
 Usage:
     python3 -m agentpathfinder.mcp pathfinder   # start Pathfinder MCP server (stdio)
     python3 -m agentpathfinder.mcp memory        # start Memory MCP server (stdio)
+    python3 -m agentpathfinder.mcp deepbrain     # start DeepBrain MCP server (stdio)
     python3 -m agentpathfinder.mcp help          # print usage
 
 Each server speaks MCP over stdio.  Configure as an MCP client subprocess:
@@ -18,8 +19,13 @@ Each server speaks MCP over stdio.  Configure as an MCP client subprocess:
 import asyncio
 import sys
 
-from .pathfinder_server import PathfinderServer
-from .memory_server import MemoryServer
+import importlib
+
+_SERVERS = {
+    "pathfinder": "agentpathfinder.mcp.pathfinder_server",
+    "memory": "agentpathfinder.mcp.memory_server",
+    "deepbrain": "agentpathfinder.mcp.deepbrain_server",
+}
 
 
 def main():
@@ -28,17 +34,14 @@ def main():
         return
 
     mode = sys.argv[1]
-
-    if mode == "pathfinder":
-        server = PathfinderServer()
-        asyncio.run(server.run())
-    elif mode == "memory":
-        server = MemoryServer()
-        asyncio.run(server.run())
-    else:
+    mod_path = _SERVERS.get(mode)
+    if not mod_path:
         print(f"Unknown server: {mode}")
-        print(__doc__)
+        print(f"Available: {', '.join(_SERVERS.keys())}")
         sys.exit(1)
+
+    mod = importlib.import_module(mod_path)
+    asyncio.run(mod.run())
 
 
 if __name__ == "__main__":
