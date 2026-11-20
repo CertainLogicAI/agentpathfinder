@@ -18,6 +18,7 @@ from typing import Dict, Any, Optional, List
 
 from .audit_trail import AuditTrail
 from .pathfinder_core import hmac_sign
+from .result_validator import validate, ValidationReport
 
 
 class ToolAuditChain:
@@ -50,13 +51,17 @@ class ToolAuditChain:
     }
 
     def __init__(self, task_id: str, step_number: int, audit_trail: AuditTrail,
-                 parent_tool_id: Optional[str] = None, depth: int = 0):
+                 parent_tool_id: Optional[str] = None, depth: int = 0,
+                 validation_rules: Optional[Dict[str, Any]] = None):
         self.task_id = task_id
         self.step_number = step_number
         self.audit = audit_trail
         self.parent_tool_id = parent_tool_id
         self.depth = depth
         self._active_calls: Dict[str, Dict[str, Any]] = {}  # tool_id -> call info
+        self.validation_rules = validation_rules
+        # Track all validation results per tool_id for later querying
+        self._validation_results: Dict[str, Dict[str, Any]] = {}
 
     # ------------------------------------------------------------------
     # Core tool call logging
@@ -144,7 +149,90 @@ class ToolAuditChain:
         )
 
         del self._active_calls[tool_id]
+
+        # Auto-validate if rules are set
+        if self.validation_rules is not None:
+            self.validate_last_result(
+                tool_id, result=None if error else result,
+                exit_code=exit_code, duration_ms=duration_ms, error=error
+            )
+
         return call_record
+
+    def validate_last_result(self, tool_id: str, result: Any,
+                              exit_code: int = 0,
+                              duration_ms: Optional[int] = None,
+                              error: Optional[str] = None) -> ValidationReport:
+        """Run validation rules against a tool result.
+
+        Builds a structured result dict from the tool call output and runs
+        the chain's validation rules against it. Logs a VALIDATION_PASS or
+        VALIDATION_FAIL event to the audit trail.
+
+        Returns the ValidationReport regardless of pass/fail.
+        """
+        # Build flat result dict for the validator
+        flat_result = {
+            "exit_code": exit_code,
+            "stdout": "",
+            "stderr": "",
+            "duration_ms": duration_ms or 0,
+        }
+
+        # Extract stdout/stderr from nested result if present
+        if isinstance(result, dict):
+            flat_result["stdout"] = result.get("stdout", "")
+            flat_result["stderr"] = result.get("stderr", "")
+            # Copy result dict as-is for nested field checks
+            flat_result["result"] = result
+        elif isinstance(result, str):
+            flat_result["stdout"] = result
+
+        if error:
+            flat_result["error"] = error
+            flat_result["exit_code"] = -1 if exit_code == 0 else exit_code
+
+        report = validate(flat_result, self.validation_rules)
+
+        # Store in validation results tracker
+        self._validation_results[tool_id] = report.to_dict()
+
+        # Log to audit trail
+        event_type = "VALIDATION_PASS" if report.passed else "VALIDATION_FAIL"
+        self.audit.log(
+            event_type,
+            self.task_id,
+            step_number=self.step_number,
+            tool_id=tool_id,
+            passed=report.passed,
+            failed_checks=report.failed_checks,
+            num_checks=len(report.checks),
+        )
+
+        return report
+
+    def get_validation_summary(self) -> Dict[str, Any]:
+        """Get summary of all validation results in this chain.
+
+        Returns
+        -------
+        dict with passed (bool), total, passed_count, failed_count, results
+        """
+        if not self._validation_results:
+            return {"passed": True, "total": 0, "passed_count": 0,
+                    "failed_count": 0, "results": {}}
+
+        passed_count = sum(
+            1 for v in self._validation_results.values() if v["passed"]
+        )
+        failed_count = len(self._validation_results) - passed_count
+        return {
+            "passed": failed_count == 0,
+            "total": len(self._validation_results),
+            "passed_count": passed_count,
+            "failed_count": failed_count,
+            "results": dict(self._validation_results),
+        }
 
     def log_tool_error(self, tool_id: str, exception: BaseException,
                        duration_ms: Optional[int] = None) -> Dict[str, Any]:
@@ -243,15 +331,15 @@ class AuditedToolExecutor:
     Usage:
         audit = TaskEngine(...).get_tool_audit(task_id, step_number)
         executor = AuditedToolExecutor(audit)
-        result = executor.exec("curl -s http://api/health")
+        result = executor.execute("curl -s http://api/health")
     """
 
     def __init__(self, tool_audit: ToolAuditChain):
         self.audit = tool_audit
 
-    def exec(self, command: str, timeout: Optional[int] = None) -> Dict[str, Any]:
+    def execute(self, command: str, timeout: Optional[int] = None) -> Dict[str, Any]:
         """Execute shell command with full audit logging."""
-        tool_id = self.audit.log_tool_call("exec", {
+        tool_id = self.audit.log_tool_call("execute", {
             "command": command,
             "timeout": timeout,
         })
@@ -294,7 +382,7 @@ class AuditedToolExecutor:
         
         start = time.time()
         try:
-            import urllib.request
+            import urllib.request  # safety: audited execution with timeout + length limit
             with urllib.request.urlopen(url, timeout=30) as response:
                 content = response.read().decode("utf-8", errors="ignore")[:max_chars]
             
@@ -354,23 +442,3 @@ class AuditedToolExecutor:
             duration_ms = int((time.time() - start) * 1000)
             self.audit.log_tool_error(tool_id, e, duration_ms)
             raise
-
-
-    # ------------------------------------------------------------------
-    # Backward compatibility aliases (v1.2.x → v1.3.0)
-    # ------------------------------------------------------------------
-
-    def summarize(self) -> str:
-        """Backward compat alias for get_tool_summary()."""
-        summary = self.get_tool_summary()
-        lines = [
-            f"Task: {summary['task_id']} (step {summary['step_number']})",
-            f"Events: {summary['total_tool_events']}",
-            f"Active: {summary['active_calls']}",
-            f"By tool: {summary['by_tool']}",
-        ]
-        return "\n".join(lines)
-    
-    def verify_integrity(self) -> dict:
-        """Verify HMAC signatures on all logged events."""
-        return self.audit.verify_integrity()
